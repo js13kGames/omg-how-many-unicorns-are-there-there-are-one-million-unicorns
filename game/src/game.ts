@@ -3,6 +3,7 @@ import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
+import {fixed_steps, meadow_field, STEP} from "./navigation.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
 import {sys_control_camera} from "./systems/sys_control_camera.js";
 import {sys_render2d} from "./systems/sys_render2d.js";
@@ -22,6 +23,11 @@ export class Game extends Game3D {
     Spritesheet = create_spritesheet_from(this.Gl, document.querySelector("img")!);
     InstanceBuffer = this.Gl.createBuffer()!;
     UnitSize = REAL_UNIT_SIZE;
+    Field = meadow_field();
+    Speed = 1;
+    Paused = false;
+    Time = 0;
+    Remainder = 0;
 
     constructor() {
         super();
@@ -30,10 +36,21 @@ export class Game extends Game3D {
         this.Gl.disable(GL_CULL_FACE);
         this.Gl.disable(GL_BLEND);
         setup_render2d_buffers(this.Gl, this.InstanceBuffer);
+        document.querySelector("#pause")!.addEventListener("click", () => {
+            this.Paused = !this.Paused;
+            document.querySelector("#pause")!.textContent = this.Paused ? "Resume" : "Pause";
+        });
+        document.querySelector("#speed")!.addEventListener("click", () => {
+            this.Speed = this.Speed === 1 ? 2 : 1;
+            document.querySelector("#speed")!.textContent = `${this.Speed}x speed`;
+        });
     }
 
     override FrameUpdate(delta: number) {
         sys_control_camera(this, delta);
+        const steps = fixed_steps(this.Remainder, delta, this.Paused ? 0 : this.Speed);
+        this.Remainder = steps.remainder;
+        for (let i = 0; i < steps.count; i++) this.Time += STEP;
         sys_transform2d(this, delta);
         sys_resize2d(this, delta);
         sys_camera2d(this, delta);
