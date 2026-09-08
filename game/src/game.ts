@@ -52,6 +52,7 @@ export class Game extends Game3D {
         this.Battle.Damage = 3 * 1.2 ** this.Progress.damage;
         this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
     }
+    FreezeStart: [number, number] | null = null;
     Beams: number[] = [];
 
     constructor() {
@@ -82,6 +83,7 @@ export class Game extends Game3D {
             this.Actors.clear();
             for (const ent of this.Towers) destroy_entity(this.World, ent);
             this.Towers = [];
+            this.FreezeStart = null;
             this.Battle = new Battle();
             this.ApplyProgress();
             this.Rewarded = false;
@@ -93,7 +95,13 @@ export class Game extends Game3D {
             if (event.target !== this.Ui || this.Paused || this.Cameras.length === 0) return;
             const point: [number, number] = [event.clientX, event.clientY];
             viewport_to_world(point, this.World.Camera2D[this.Cameras[0]], point);
-            this.Battle.Explode(point[0] + 32, point[1] + 18);
+            if (document.querySelector<HTMLSelectElement>("#ability")!.value === "freeze") {
+                if (!this.FreezeStart) this.FreezeStart = [point[0] + 32, point[1] + 18];
+                else {
+                    this.Battle.Freeze(...this.FreezeStart, point[0] + 32, point[1] + 18);
+                    this.FreezeStart = null;
+                }
+            } else this.Battle.Explode(point[0] + 32, point[1] + 18);
         });
         const build = document.querySelector("#build")!;
         PADS.forEach((_, i) => {
@@ -163,6 +171,10 @@ export class Game extends Game3D {
                 this.Actors.set(e.id, ent);
             }
             const local = this.World.LocalTransform2D[ent];
+            local.Scale[0] = local.Scale[1] = (e.speed || 2.8) > 3 ? 0.55 : 0.7;
+            this.World.Render2D[ent].Color.set(
+                (e.frozen || 0) > 0 ? [0.4, 0.85, 1, 1] : [1, 0.75 + (e.id % 4) * 0.06, 0.92, 1],
+            );
             local.Translation[0] = e.x - 32;
             local.Translation[1] = e.y - 18;
             this.World.Render2D[ent].Detail[0] = -(e.y - 18) / 100;
@@ -172,6 +184,12 @@ export class Game extends Game3D {
             this.Battle.MissileCooldown > 0
                 ? `Magic Missile: ${Math.ceil(this.Battle.MissileCooldown)}s`
                 : "Click battlefield: Magic Missile ready";
+        if (document.querySelector<HTMLSelectElement>("#ability")!.value === "freeze")
+            document.querySelector("#missile")!.textContent = this.FreezeStart
+                ? "Click the end of the freeze line"
+                : this.Battle.FreezeCooldown > 0
+                  ? `Freeze: ${Math.ceil(this.Battle.FreezeCooldown)}s`
+                  : "Click two points: Freeze ready";
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / 100`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;

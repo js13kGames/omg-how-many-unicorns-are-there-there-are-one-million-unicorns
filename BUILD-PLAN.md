@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 15,877 bytes. Cloud Mortar and Friendship Coil are now available in the tower selector. Mortars target dense cells and apply delayed area damage with knockback. Coil attacks visit each chain target once. Weapon, combat, wave, and progress checks passed. Browser purchases selected the correct tower types and costs with no WebGL error. Freeze, Sprinter, distinct tower art, full playthrough balance, remaining content, and large-scale validation are incomplete.
+The current release is 16,439 bytes. The first playable content now has three towers, Basic and Sprinter enemies, Magic Missile, and Freeze Rainbow. Freeze uses two selected points, stops enemies for three seconds, and has an 18-second cooldown. Node checks passed for freeze bounds, duration, cooldown, Sprinter composition, weapons, combat, waves, and progress. A browser two-click test froze a target and set the cooldown with no WebGL error. Distinct tower art, death effects, onboarding, full playthrough balance, remaining content, and large-scale validation are incomplete.
 
 ## Measured CPU simulation check
 

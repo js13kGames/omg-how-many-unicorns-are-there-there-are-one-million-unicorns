@@ -17,6 +17,8 @@ export interface Enemy {
     id: number;
     kx?: number;
     ky?: number;
+    speed?: number;
+    frozen?: number;
 }
 export class Battle {
     Enemies: Enemy[] = [];
@@ -32,6 +34,38 @@ export class Battle {
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
     Stars = 180;
+    FreezeCooldown = 0;
+    Freeze(ax: number, ay: number, bx: number, by: number) {
+        if (
+            ![ax, ay, bx, by].every(Number.isFinite) ||
+            ax < 0 ||
+            bx < 0 ||
+            ay < 0 ||
+            by < 0 ||
+            ax >= W ||
+            bx >= W ||
+            ay >= H ||
+            by >= H ||
+            this.FreezeCooldown > 0 ||
+            this.Won ||
+            this.Integrity <= 0
+        )
+            return false;
+        const dx = bx - ax,
+            dy = by - ay,
+            length = dx * dx + dy * dy;
+        this.Grid();
+        for (const i of this.Query((ax + bx) / 2, (ay + by) / 2, Math.sqrt(length) / 2 + 2)) {
+            const e = this.Enemies[i],
+                t = length
+                    ? Math.max(0, Math.min(1, ((e.x - ax) * dx + (e.y - ay) * dy) / length))
+                    : 0;
+            if ((e.x - ax - dx * t) ** 2 + (e.y - ay - dy * t) ** 2 <= 4) e.frozen = 3;
+        }
+        this.Shots.push({x: bx, y: by, fromX: ax, fromY: ay, life: 0.5});
+        this.FreezeCooldown = 18;
+        return true;
+    }
     MissileCooldown = 0;
     Blast: {x: number; y: number; life: number} | null = null;
     Explode(x: number, y: number) {
@@ -134,6 +168,7 @@ export class Battle {
             y: 2 + this.Random() * 32,
             vx: 0,
             vy: 0,
+            speed: this.Wave >= 3 && this.Spawned % 5 === 0 ? 4.8 : 2.8,
             hp: 3,
             id: this.Spawned++,
         };
@@ -182,6 +217,7 @@ export class Battle {
                 (30 + this.Wave * 12) *
                 (this.WaveTime % 12 < 4 ? 0.65 : this.WaveTime % 12 < 9 ? 1.6 : 0.35);
         this.Time += STEP;
+        this.FreezeCooldown = Math.max(0, this.FreezeCooldown - STEP);
         this.MissileCooldown = Math.max(0, this.MissileCooldown - STEP);
         if (this.Blast && (this.Blast.life -= STEP) <= 0) this.Blast = null;
         this.SpawnClock += STEP * this.Rate;
@@ -192,6 +228,12 @@ export class Battle {
         this.Grid();
         for (const e of this.Enemies) {
             if (e.hp <= 0) continue;
+            if ((e.frozen || 0) > 0) {
+                e.frozen = Math.max(0, e.frozen! - STEP);
+                e.vx = 0;
+                e.vy = 0;
+                continue;
+            }
             const cx = Math.floor(e.x),
                 cy = Math.floor(e.y),
                 cell = cy * W + cx;
@@ -217,8 +259,8 @@ export class Battle {
             let dx = tx,
                 dy = ty,
                 length = Math.hypot(dx, dy) || 1;
-            dx = (dx / length) * 2.8;
-            dy = (dy / length) * 2.8;
+            dx = (dx / length) * (e.speed || 2.8);
+            dy = (dy / length) * (e.speed || 2.8);
             let checked = 0;
             // ponytail: sample at most 24 neighbours for separation; use density forces if dense chokes need more pressure.
             for (let y = Math.max(0, cy - 1); y <= Math.min(H - 1, cy + 1); y++)
