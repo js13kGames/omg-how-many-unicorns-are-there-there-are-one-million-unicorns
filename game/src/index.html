@@ -1,34 +1,16 @@
-<!DOCTYPE html>
-<meta charset="utf8" />
-<meta name="viewport" content="width=device-width, user-scalable=0" />
-<title>Platformer2D</title>
-<link rel="stylesheet" href="../play/game.css" />
-<link rel="stylesheet" href="../play/debug.css" />
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unicorn Flood</title>
+<link rel="stylesheet" href="../play/game.css">
 <body>
-    <!-- Add it to play/game.html too. -->
-    <img hidden src="./sprites/atlas.png.webp" />
-    <canvas id="background"></canvas>
-    <canvas id="scene"></canvas>
-    <canvas id="foreground"></canvas>
-    <main></main>
-
-    <div id="debug">
-        <div>update: <span id="update"></span></div>
-        <div>delta: <span id="delta"></span></div>
-        <div>fps: <span id="fps"></span></div>
-        <div><button onclick="toggle(this)">pause</button></div>
-    </div>
-    <script type="module">
-        import "./index.js";
-
-        window.toggle = function toggle(button) {
-            if (game.Running) {
-                game.Stop();
-                button.textContent = "resume";
-            } else {
-                game.Start();
-                button.textContent = "pause";
-            }
-        };
-    </script>
-</body>
+<img hidden src="./sprites/unicorn.svg" alt="">
+<canvas id="background"></canvas><canvas id="scene" aria-label="Fortress battlefield"></canvas><canvas id="foreground"></canvas>
+<main>
+<header><div><small>FORTRESS COMMAND / MEADOW GATE</small><h1>UNICORN FLOOD</h1></div><div class="report"><small>FIELD TEST 01</small><strong>Hold the gate.</strong></div></header>
+<section id="status" aria-live="polite"><span>INTEGRITY <b>100 / 100</b></span><span>CONTACTS <b>180</b></span><span>RENDER <b>WEBGL2 / INSTANCED</b></span></section>
+<footer><span>Right-drag to pan · Scroll to zoom</span><span>PROTOTYPE ZERO / IN DEVELOPMENT</span></footer>
+</main>
+<script type="module" src="./index.js"></script>
+</body></html>

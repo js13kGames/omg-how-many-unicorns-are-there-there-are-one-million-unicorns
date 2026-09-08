@@ -9,6 +9,10 @@ export const atlas: {
         c?: boolean,
     }
 } = {
+    ground: {x: 1, y: 1, w: 62, h: 62},
+    unicorn: {x: 64, y: 0, w: 64, h: 64},
+    tower: {x: 128, y: 0, w: 64, h: 64},
+    stone: {x: 192, y: 0, w: 64, h: 64},
     "0": {
         "x": 1,
         "y": 1,

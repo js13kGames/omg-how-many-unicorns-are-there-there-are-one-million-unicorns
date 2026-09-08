@@ -55,7 +55,7 @@ function vertex(has_render2d: number, has_spatial_node2d: number) {
             vert_color = attr_color;
         } else {
             // Place the vertex outside the frustum.
-            gl_Position.z = 2.0;
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         }
     }`;
 }
@@ -72,7 +72,7 @@ let fragment = `#version 300 es\n
 
     void main() {
         frag_color = vert_color * texture(sheet_texture, vert_texcoord);
-        if (frag_color.a == 0.0) {
+        if (frag_color.a < 0.5) {
             discard;
         }
     }

@@ -25,7 +25,7 @@ export function create_entity(world: WorldImpl) {
         return world.Graveyard.pop()!;
     }
 
-    if (DEBUG && world.Signature.length > world.Capacity) {
+    if (world.Signature.length >= world.Capacity) {
         throw new Error("No more entities available.");
     }
 

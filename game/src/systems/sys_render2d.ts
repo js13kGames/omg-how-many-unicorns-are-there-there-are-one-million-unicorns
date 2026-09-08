@@ -32,7 +32,11 @@ export function sys_render2d(game: Game, delta: number) {
     }
 
     game.Gl.bindBuffer(GL_ARRAY_BUFFER, game.InstanceBuffer);
-    game.Gl.bufferData(GL_ARRAY_BUFFER, game.World.InstanceData, GL_STREAM_DRAW);
+    game.Gl.bufferData(
+        GL_ARRAY_BUFFER,
+        game.World.InstanceData.subarray(0, game.World.Signature.length * FLOATS_PER_INSTANCE),
+        GL_STREAM_DRAW,
+    );
 
     for (let camera_entity of game.Cameras) {
         let camera = game.World.Camera2D[camera_entity];

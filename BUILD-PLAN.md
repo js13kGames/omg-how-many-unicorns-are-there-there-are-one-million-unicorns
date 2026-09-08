@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-B01 is complete. The isolated Goodluck 2D release passed type checks and a browser smoke test. The release page is 17,197 bytes. The next task is B02 below.
+B01 and B02 are complete. The top-down scene passed type checks, release build, entity capacity/reuse checks, and browser checks. The release page is 10,718 bytes. One frame used one instanced draw and uploaded 50,816 bytes, equal to the used slot range. WebGL reported no error. Pan and zoom passed. The next task is B03 below.
 
 The design source is `game-design-doc.md`, version 0.1. All 151 sections were read. Keep that source unchanged. This report records proposed build choices, not changes to the design.
 
@@ -125,7 +125,7 @@ Complete one row at a time. Split a row into smaller commits if it contains sepa
 | --- | --- | --- | --- |
 | A01 | Done | Read design, rules, engine, and named examples; save this assessment. | All design sections read; source paths and draw calls checked. |
 | B01 | Done | Create `game/` with the bootstrap procedure above. | Type check; production build; browser shows 2D sprites; no broken core links; reference repos unchanged. |
-| B02 | Not started | Remove platform gameplay; add a top-down scene, temporary atlas, pan, zoom, correct depth, and safe instance capacity. | Browser shows overlapping sprites in correct order; test entity removal/reuse and capacity boundary; verify instanced calls and used-range uploads. |
+| B02 | Done | Remove platform gameplay; add a top-down scene, temporary atlas, pan, zoom, correct depth, and safe instance capacity. | Browser shows overlapping sprites in correct order; test entity removal/reuse and capacity boundary; verify instanced calls and used-range uploads. |
 | B03 | Not started | Add fixed-step timing, pause, speed controls, fixed map, and shared flow field. | Small runnable checks for equal-cost routes, blocked and unreachable cells, corner handling, pause, and equivalent 1x/2x simulation time. |
 | B04 | Not started | Add uniform grid, area spawning, crowd forces, and fortress arrivals. | Check local queries against a brute-force reference on a small sample; no non-finite positions; no wall escape; each arrival causes damage once. |
 | B05 | Not started | Add health, Star Blaster, and death removal. Complete Prototype Zero. | Check range, FIRST targeting, damage, target reuse, and single kill rewards; play the one-tower scene. |
