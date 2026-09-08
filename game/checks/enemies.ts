@@ -32,4 +32,16 @@ mass.Enemies = [
 ];
 mass.Explode(9, 10);
 check(Math.abs(mass.Enemies[0].kx! / mass.Enemies[1].kx! - 4) < 1e-9, "Mass scales knockback");
+const rally = new Battle();
+rally.Campaign = false;
+rally.Rate = 0;
+rally.Enemies = [
+    {x: 10, y: 18, vx: 0, vy: 0, hp: 100, id: 0, kind: 4},
+    {x: 12, y: 18, vx: 0, vy: 0, hp: 3, id: 1},
+];
+rally.Tick();
+check(rally.Enemies[1].rally === true, "Royal rallies nearby allies");
+rally.Enemies[0].hp = 0;
+rally.Tick();
+check(rally.Enemies[0].rally === false, "Rally ends when Royal dies");
 console.log("Enemy archetype, armor, mass, and boss checks passed.");

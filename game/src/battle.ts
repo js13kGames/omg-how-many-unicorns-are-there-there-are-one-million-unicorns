@@ -35,6 +35,7 @@ export interface Enemy {
     leak?: number;
     slow?: number;
     vulnerable?: number;
+    rally?: boolean;
 }
 export class Battle {
     Enemies: Enemy[] = [];
@@ -293,6 +294,11 @@ export class Battle {
             this.SpawnClock--;
         }
         this.Grid();
+        for (const e of this.Enemies) e.rally = false;
+        for (const royal of this.Enemies)
+            if (royal.kind === 4 && royal.hp > 0)
+                for (const i of this.Query(royal.x, royal.y, 6))
+                    if (this.Enemies[i] !== royal) this.Enemies[i].rally = true;
         for (const e of this.Enemies) {
             if (e.hp <= 0) continue;
             e.slow = Math.max(0, (e.slow || 0) - STEP);
@@ -328,8 +334,16 @@ export class Battle {
             let dx = tx,
                 dy = ty,
                 length = Math.hypot(dx, dy) || 1;
-            dx = (dx / length) * (e.speed || 2.8) * ((e.slow || 0) > 0 ? 0.7 : 1);
-            dy = (dy / length) * (e.speed || 2.8) * ((e.slow || 0) > 0 ? 0.7 : 1);
+            dx =
+                (dx / length) *
+                (e.speed || 2.8) *
+                (e.rally ? 1.25 : 1) *
+                ((e.slow || 0) > 0 ? 0.7 : 1);
+            dy =
+                (dy / length) *
+                (e.speed || 2.8) *
+                (e.rally ? 1.25 : 1) *
+                ((e.slow || 0) > 0 ? 0.7 : 1);
             let checked = 0;
             // ponytail: sample at most 24 neighbours for separation; use density forces if dense chokes need more pressure.
             for (let y = Math.max(0, cy - 1); y <= Math.min(H - 1, cy + 1); y++)

@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 19,462 bytes. Permanent range and fortress upgrades now apply on retry. Old version-one saves gain zero levels for these fields. Validation, purchase, map, tower, wave, and combat checks passed. Browser retry with two range levels and three fortress levels produced range 14 and integrity 160/160 with no WebGL error. The game has five selectable layouts and initial logic for seven towers, five enemies, and five abilities. Remaining work includes Prism reflection, projectile travel, visible ability warnings, distinct art, mechanic upgrades and unlocks, Royal support, audio, balance, and large-scale validation.
+The current release is 19,516 bytes. Royal enemies now give nearby allies a 25% speed increase. The effect ends when the Royal dies; runnable enemy checks passed. Permanent range and fortress upgrades remain compatible with older saves. The game has five selectable layouts and initial logic for seven towers, five enemies, and five abilities. Remaining work includes Prism reflection, projectile travel, visible ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation.
 
 ## Measured CPU simulation check
 
