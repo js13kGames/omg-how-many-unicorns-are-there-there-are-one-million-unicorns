@@ -15,6 +15,8 @@ export interface Enemy {
     vy: number;
     hp: number;
     id: number;
+    kx?: number;
+    ky?: number;
 }
 export class Battle {
     Enemies: Enemy[] = [];
@@ -28,6 +30,36 @@ export class Battle {
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
     Stars = 180;
+    MissileCooldown = 0;
+    Blast: {x: number; y: number; life: number} | null = null;
+    Explode(x: number, y: number) {
+        if (
+            !Number.isFinite(x + y) ||
+            blocked(Math.floor(x), Math.floor(y)) ||
+            this.Integrity <= 0 ||
+            this.MissileCooldown > 0
+        )
+            return false;
+        this.Grid();
+        for (const i of this.Query(x, y, 5)) {
+            const e = this.Enemies[i],
+                dx = e.x - x,
+                dy = e.y - y,
+                d = Math.hypot(dx, dy),
+                strength = 1 - d / 5;
+            e.hp -= 12 * strength;
+            if (e.hp <= 0) {
+                this.Kills++;
+                this.Stars++;
+            }
+            const angle = e.id * 2.399;
+            e.kx = (e.kx || 0) + (d ? dx / d : Math.cos(angle)) * strength * 12;
+            e.ky = (e.ky || 0) + (d ? dy / d : Math.sin(angle)) * strength * 12;
+        }
+        this.MissileCooldown = 8;
+        this.Blast = {x, y, life: 0.5};
+        return true;
+    }
     Towers: {x: number; y: number; clock: number}[] = [];
     Build(pad: number) {
         if (
@@ -94,6 +126,8 @@ export class Battle {
         if (this.Integrity <= 0 || (this.Spawned >= this.Limit && this.Enemies.length === 0))
             return;
         this.Time += STEP;
+        this.MissileCooldown = Math.max(0, this.MissileCooldown - STEP);
+        if (this.Blast && (this.Blast.life -= STEP) <= 0) this.Blast = null;
         this.SpawnClock += STEP * this.Rate;
         while (this.SpawnClock >= 1 && this.Spawned < this.Limit) {
             this.Spawn();
@@ -155,8 +189,10 @@ export class Battle {
             dy += Math.sin(e.id * 2.4 + this.Time * 0.7) * 0.12;
             e.vx += (dx - e.vx) * 0.15;
             e.vy += (dy - e.vy) * 0.15;
-            const nx = e.x + e.vx * STEP,
-                ny = e.y + e.vy * STEP;
+            e.kx = (e.kx || 0) * 0.94;
+            e.ky = (e.ky || 0) * 0.94;
+            const nx = e.x + (e.vx + e.kx) * STEP,
+                ny = e.y + (e.vy + e.ky) * STEP;
             if (!blocked(Math.floor(nx), Math.floor(e.y))) e.x = nx;
             if (!blocked(Math.floor(e.x), Math.floor(ny))) e.y = ny;
             if (e.x > 56 && Math.abs(e.y - 18) < 1.5) {

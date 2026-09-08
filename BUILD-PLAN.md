@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-B01–B03 are complete. B04–B05 include density pressure, stable movement noise, visible instanced shots, hit lighting, and retry. B07 now has six tower build pads, Stars, kill rewards, and purchase guards. The release page is 13,509 bytes. Type checks and crowd/combat/purchase checks passed. Browser checks confirmed construction during pause, 60-Star cost, one rendered tower, retry reset, and no WebGL error. Waves, meta progress, remaining weapons, and scale tests are still incomplete.
+The current release is 13,914 bytes. It includes moving enemies, tower build pads, Stars, shots, lighting, retry, and a targeted Magic Missile with damage falloff, separate knockback velocity, and an eight-second cooldown. Type checks and runnable crowd/combat/explosion checks passed. A browser map-click test applied damage, set the cooldown, and produced no WebGL error. Waves, meta progress, remaining weapons, crowd-scale validation, and final presentation are incomplete.
 
 ## Updated visual and scale target
 
@@ -137,7 +137,7 @@ Complete one row at a time. Split a row into smaller commits if it contains sepa
 | B03 | Done | Add fixed-step timing, pause, speed controls, fixed map, and shared flow field. | Small runnable checks for equal-cost routes, blocked and unreachable cells, corner handling, pause, and equivalent 1x/2x simulation time. |
 | B04 | In progress | Add uniform grid, area spawning, crowd forces, and fortress arrivals. | Check local queries against a brute-force reference on a small sample; no non-finite positions; no wall escape; each arrival causes damage once. |
 | B05 | In progress | Add health, Star Blaster, and death removal. Complete Prototype Zero. | Check range, FIRST targeting, damage, target reuse, and single kill rewards; play the one-tower scene. |
-| B06 | Not started | Add a test explosion, knockback, density display, and repeatable crowd stress scenes. | Test 1k/5k/10k; record frame and simulation costs; inspect choke compression and recovery after blast. Stop content work if crowd motion fails. |
+| B06 | In progress | Add a test explosion, knockback, density display, and repeatable crowd stress scenes. | Test 1k/5k/10k; record frame and simulation costs; inspect choke compression and recovery after blast. Stop content work if crowd motion fails. |
 | B07 | In progress | Add wave segments, Stars, valid tower placement, win/loss, and retry. | Check budgets, purchases, forbidden pads, pause-build, last-wave completion, and one run end. Test first threat at 20–40 seconds. |
 | B08 | Not started | Add Sparkles, upgrades, summary, and safe meta saves. | Check reward once, purchase rules, invalid/newer saves, storage failure, reload, and retry. Play three runs and compare progress. |
 | B09 | Not started | Add Cloud Mortar, density targeting, and bounded death effects. | Check radius/falloff and mass-based knockback; record dense-wave costs with effects enabled. |

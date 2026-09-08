@@ -50,4 +50,18 @@ check(combat.Kills === 1 && combat.Enemies.length === 0, "Tower kills once and r
 check(combat.Stars === 121, "Kill reward once");
 combat.Stars = 0;
 check(!combat.Build(1), "Reject unaffordable purchase");
-console.log("Crowd, query, arrival, and combat checks passed.");
+const blast = new Battle();
+blast.Rate = 0;
+blast.Enemies.push({x: 10, y: 10, vx: 0, vy: 0, hp: 30, id: 0});
+check(!blast.Explode(NaN, 10), "Reject invalid blast target");
+check(blast.Explode(10, 10), "Blast at enemy centre");
+check(!blast.Explode(10, 10), "Cooldown prevents duplicate blast");
+check(blast.Enemies[0].hp === 18, "Blast centre damage");
+blast.Tick();
+check(Number.isFinite(blast.Enemies[0].x + blast.Enemies[0].y), "Centre knockback is finite");
+for (let i = 0; i < 120; i++) blast.Tick();
+check(
+    blast.Enemies.every((e) => !blocked(Math.floor(e.x), Math.floor(e.y))),
+    "Knockback respects walls",
+);
+console.log("Crowd, query, arrival, combat, and explosion checks passed.");

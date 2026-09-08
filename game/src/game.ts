@@ -1,3 +1,4 @@
+import {viewport_to_world} from "./components/com_camera2d.js";
 import {Game3D} from "../lib/game.js";
 import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
@@ -57,6 +58,12 @@ export class Game extends Game3D {
             this.Paused = false;
             document.querySelector("#pause")!.textContent = "Pause";
         });
+        this.Ui.addEventListener("click", (event) => {
+            if (event.target !== this.Ui || this.Paused || this.Cameras.length === 0) return;
+            const point: [number, number] = [event.clientX, event.clientY];
+            viewport_to_world(point, this.World.Camera2D[this.Cameras[0]], point);
+            this.Battle.Explode(point[0] + 32, point[1] + 18);
+        });
         const build = document.querySelector("#build")!;
         PADS.forEach((_, i) => {
             const button = document.createElement("button");
@@ -101,6 +108,10 @@ export class Game extends Game3D {
             this.World.Render2D[ent].Detail[0] = -(e.y - 18) / 100;
             this.World.Signature[ent] |= Has.Dirty;
         }
+        document.querySelector("#missile")!.textContent =
+            this.Battle.MissileCooldown > 0
+                ? `Magic Missile: ${Math.ceil(this.Battle.MissileCooldown)}s`
+                : "Click battlefield: Magic Missile ready";
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / 100`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;

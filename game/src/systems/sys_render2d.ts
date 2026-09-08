@@ -53,7 +53,7 @@ function render_all(game: Game, eye: Camera2D) {
     let sheet = game.Spritesheet;
 
     game.Gl.useProgram(material.Program);
-    const shot = game.Battle.Shots[game.Battle.Shots.length - 1];
+    const shot = game.Battle.Blast || game.Battle.Shots[game.Battle.Shots.length - 1];
     game.Gl.uniform3f(
         material.Locations.Flash,
         shot ? shot.x - 32 : 0,
