@@ -53,6 +53,7 @@ export class Game extends Game3D {
         this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
     }
     FreezeStart: [number, number] | null = null;
+    Debris: {entity: number; life: number; vx: number; vy: number}[] = [];
     Beams: number[] = [];
 
     constructor() {
@@ -156,6 +157,24 @@ export class Game extends Game3D {
         const live = new Set(this.Battle.Enemies.map((e) => e.id));
         for (const [id, ent] of this.Actors)
             if (!live.has(id)) {
+                const local = this.World.LocalTransform2D[ent];
+                if (local.Translation[0] < 24 && this.Debris.length < 256) {
+                    const angle = id * 2.399;
+                    this.Debris.push({
+                        entity: sprite(
+                            this,
+                            "ground",
+                            ...local.Translation,
+                            0.16,
+                            0.16,
+                            [1, 0.5, 0.85, 1],
+                            0.75,
+                        ),
+                        life: 0.45,
+                        vx: Math.cos(angle) * 2,
+                        vy: Math.sin(angle) * 2,
+                    });
+                }
                 destroy_entity(this.World, ent);
                 this.Actors.delete(id);
             }
@@ -243,6 +262,18 @@ export class Game extends Game3D {
             local.Scale[1] = 0.05 + shot.life * 0.4;
             local.Rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
         }
+        for (const debris of this.Debris) {
+            if (!this.Paused) {
+                debris.life -= Math.min(delta, 0.1) * this.Speed;
+                const local = this.World.LocalTransform2D[debris.entity];
+                local.Translation[0] += debris.vx * delta;
+                local.Translation[1] += debris.vy * delta;
+                local.Scale[0] = local.Scale[1] = Math.max(0, debris.life) * 0.4;
+                this.World.Signature[debris.entity] |= Has.Dirty;
+            }
+            if (debris.life <= 0) destroy_entity(this.World, debris.entity);
+        }
+        this.Debris = this.Debris.filter((d) => d.life > 0);
         const startButton = document.querySelector<HTMLButtonElement>("#start-wave")!;
         startButton.disabled =
             this.Battle.Preparing <= 0 || this.Battle.Won || this.Battle.Integrity <= 0;
@@ -255,7 +286,11 @@ export class Game extends Game3D {
                 ? "The fortress has been overloved."
                 : this.Battle.Won
                   ? "Gate secured."
-                  : "Hold the gate.";
+                  : this.Battle.Towers.length === 0
+                    ? "Choose a tower, then a build pad."
+                    : this.Battle.Wave === 0
+                      ? "Start the wave when ready."
+                      : "Click the battlefield to use an ability.";
         sys_transform2d(this, delta);
         sys_resize2d(this, delta);
         sys_camera2d(this, delta);

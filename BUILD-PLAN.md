@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 16,439 bytes. The first playable content now has three towers, Basic and Sprinter enemies, Magic Missile, and Freeze Rainbow. Freeze uses two selected points, stops enemies for three seconds, and has an 18-second cooldown. Node checks passed for freeze bounds, duration, cooldown, Sprinter composition, weapons, combat, waves, and progress. A browser two-click test froze a target and set the cooldown with no WebGL error. Distinct tower art, death effects, onboarding, full playthrough balance, remaining content, and large-scale validation are incomplete.
+The current release is 17,563 bytes. The first playable version has three towers, two enemy types, two abilities, eight waves, upgrades, saves, first-use hints, and bounded death effects. The automated campaign completed all eight waves in 166.98 seconds with 11,009 kills and full integrity. This verifies completion, not balance. Browser effects expired without WebGL errors. Distinct tower art, additional maps and content, audio, full balance, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 
