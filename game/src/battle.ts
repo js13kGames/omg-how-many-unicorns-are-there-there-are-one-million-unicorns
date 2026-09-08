@@ -180,7 +180,7 @@ export class Battle {
         }
         this.Blast = {x, y, life: 0.5};
     }
-    Mortars: {x: number; y: number; delay: number; damage: number}[] = [];
+    Mortars: {x: number; y: number; delay: number; damage: number; support?: boolean}[] = [];
     Towers: {x: number; y: number; clock: number; kind: number}[] = [];
     Build(pad: number, kind = 0) {
         if (
@@ -486,7 +486,15 @@ export class Battle {
         this.Cannonballs = this.Cannonballs.filter((b) => b.left > 0);
         for (const mortar of this.Mortars) {
             mortar.delay -= STEP;
-            if (mortar.delay <= 0) this.AreaDamage(mortar.x, mortar.y, 4, mortar.damage);
+            if (mortar.delay <= 0) {
+                if (mortar.support)
+                    for (const i of this.Query(mortar.x, mortar.y, 4)) {
+                        const e = this.Enemies[i];
+                        e.slow = 3;
+                        e.vulnerable = 3;
+                    }
+                this.AreaDamage(mortar.x, mortar.y, 4, mortar.damage);
+            }
         }
         this.Mortars = this.Mortars.filter((m) => m.delay > 0);
         this.FireClock -= STEP;
@@ -573,13 +581,13 @@ export class Battle {
                             continue;
                         }
                         if (tower.kind === 6) {
-                            for (const i of this.Query(aim.x, aim.y, 4)) {
-                                const e = this.Enemies[i];
-                                e.slow = 3;
-                                e.vulnerable = 3;
-                                this.DamageEnemy(e, this.Damage);
-                            }
-                            this.Blast = {x: aim.x, y: aim.y, life: 0.4};
+                            this.Mortars.push({
+                                x: aim.x,
+                                y: aim.y,
+                                delay: 0.5,
+                                damage: this.Damage,
+                                support: true,
+                            });
                             tower.clock = 1.5;
                         } else {
                             const line = targets.filter((i) => {

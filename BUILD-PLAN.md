@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 20,151 bytes. Candy Cannon now fires moving projectiles with swept hit checks, per-projectile target tracking, damage decay, and map-specific wall collision. Tests verify that damage waits for travel and penetration decays; tower, beam, weapon, combat, and map checks passed. Prism reflection is implemented. Cupcake flight, visible ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
+The current release is 20,130 bytes. Cupcake now uses a delayed area impact shared with the mortar path, applying slow and vulnerability at impact. Cannon projectiles and Prism reflection are implemented. Tower checks verify delayed damage and support effects. Visible projectile arcs, ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 

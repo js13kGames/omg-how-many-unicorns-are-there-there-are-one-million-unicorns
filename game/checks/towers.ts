@@ -13,6 +13,13 @@ for (const kind of [3, 4, 5, 6]) {
         {x: 40, y: 23, vx: 0, vy: 0, hp: 100, id: 1},
     );
     b.Tick();
+    if (kind === 6) {
+        check(
+            b.Enemies.every((e) => e.hp === 100),
+            "Cupcake waits for impact",
+        );
+        for (let i = 0; i < 35; i++) b.Tick();
+    }
     if (kind === 4) {
         check(
             b.Enemies.every((e) => e.hp === 100),
