@@ -1,3 +1,4 @@
+import {beam_segments} from "./beam.js";
 import {blocked, MAP_WIDTH as W, MAP_HEIGHT as H, meadow_field, STEP} from "./navigation.js";
 
 export const TOWER_COSTS = [60, 100, 90, 80, 120, 140, 100];
@@ -459,6 +460,53 @@ export class Battle {
                             len = Math.hypot(dx, dy) || 1,
                             ux = dx / len,
                             uy = dy / len;
+                        if (tower.kind === 5) {
+                            for (const segment of beam_segments(
+                                tower.x,
+                                tower.y,
+                                ux,
+                                uy,
+                                this.Range,
+                                this.Map,
+                            )) {
+                                const dx = segment.bx - segment.ax,
+                                    dy = segment.by - segment.ay,
+                                    length = dx * dx + dy * dy;
+                                for (const i of this.Query(
+                                    (segment.ax + segment.bx) / 2,
+                                    (segment.ay + segment.by) / 2,
+                                    Math.sqrt(length) / 2 + 0.5,
+                                )) {
+                                    const e = this.Enemies[i],
+                                        t = length
+                                            ? Math.max(
+                                                  0,
+                                                  Math.min(
+                                                      1,
+                                                      ((e.x - segment.ax) * dx +
+                                                          (e.y - segment.ay) * dy) /
+                                                          length,
+                                                  ),
+                                              )
+                                            : 0;
+                                    if (
+                                        (e.x - segment.ax - t * dx) ** 2 +
+                                            (e.y - segment.ay - t * dy) ** 2 <
+                                        0.25
+                                    )
+                                        this.DamageEnemy(e, this.Damage * 0.4 * segment.power);
+                                }
+                                this.Shots.push({
+                                    x: segment.bx,
+                                    y: segment.by,
+                                    fromX: segment.ax,
+                                    fromY: segment.ay,
+                                    life: 0.12,
+                                });
+                            }
+                            tower.clock = 0.1;
+                            continue;
+                        }
                         if (tower.kind === 6) {
                             for (const i of this.Query(aim.x, aim.y, 4)) {
                                 const e = this.Enemies[i];
