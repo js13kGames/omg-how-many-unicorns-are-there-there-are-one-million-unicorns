@@ -34,8 +34,11 @@ export function scene_fortress(game: Game) {
             sprite(game, "ground", x, y, 1.96, 1.96, [shade, shade + 0.045, shade + 0.01, 1], -0.9);
         }
     }
+    for (let y = 0; y < 36; y++)
+        for (let x = 0; x < 56; x++)
+            if (game.Battle.Blocked(x, y))
+                sprite(game, "stone", x - 31.5, y - 17.5, 1, 1, undefined, 0.5);
     for (let y = -17; y <= 17; y += 2) {
-        if (Math.abs(y) > 4) sprite(game, "stone", 0, y, 3.9, 1.95, undefined, 0.5);
         sprite(game, "stone", 29, y, 2, 2, undefined, 0.6);
     }
     sprite(game, "stone", 28, 0, 5, 7, undefined, 0.65);

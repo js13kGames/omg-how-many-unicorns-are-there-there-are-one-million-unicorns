@@ -38,6 +38,15 @@ export interface Enemy {
 }
 export class Battle {
     Enemies: Enemy[] = [];
+    Map = 0;
+    SetMap(map: number) {
+        if (!Number.isInteger(map) || map < 0 || map > 4) throw new Error("Invalid map");
+        this.Map = map;
+        this.Field = meadow_field(map);
+    }
+    Blocked(x: number, y: number) {
+        return blocked(x, y, this.Map);
+    }
     Field = meadow_field();
     Cells: number[][] = Array.from({length: W * H}, () => []);
     Integrity = 100;
@@ -114,7 +123,7 @@ export class Battle {
     Explode(x: number, y: number) {
         if (
             !Number.isFinite(x + y) ||
-            blocked(Math.floor(x), Math.floor(y)) ||
+            this.Blocked(Math.floor(x), Math.floor(y)) ||
             this.Integrity <= 0 ||
             this.Won ||
             this.MissileCooldown > 0
@@ -306,7 +315,7 @@ export class Battle {
                 const nx = cx + dx,
                     ny = cy + dy;
                 if (
-                    !blocked(nx, ny) &&
+                    !this.Blocked(nx, ny) &&
                     this.Field[ny * W + nx] >= 0 &&
                     this.Field[ny * W + nx] < this.Field[cell]
                 ) {
@@ -337,7 +346,7 @@ export class Battle {
                         }
                     }
             const density = (x: number, y: number) =>
-                blocked(x, y) ? this.Cells[cell].length : this.Cells[y * W + x].length;
+                this.Blocked(x, y) ? this.Cells[cell].length : this.Cells[y * W + x].length;
             dx += Math.max(-1, Math.min(1, (density(cx - 1, cy) - density(cx + 1, cy)) * 0.08));
             dy += Math.max(-1, Math.min(1, (density(cx, cy - 1) - density(cx, cy + 1)) * 0.08));
             dy += Math.sin(e.id * 2.4 + this.Time * 0.7) * 0.12;
@@ -347,8 +356,8 @@ export class Battle {
             e.ky = (e.ky || 0) * 0.94;
             const nx = e.x + (e.vx + e.kx) * STEP,
                 ny = e.y + (e.vy + e.ky) * STEP;
-            if (!blocked(Math.floor(nx), Math.floor(e.y))) e.x = nx;
-            if (!blocked(Math.floor(e.x), Math.floor(ny))) e.y = ny;
+            if (!this.Blocked(Math.floor(nx), Math.floor(e.y))) e.x = nx;
+            if (!this.Blocked(Math.floor(e.x), Math.floor(ny))) e.y = ny;
             if (e.x > 56 && Math.abs(e.y - 18) < 1.5) {
                 e.hp = 0;
                 this.Integrity = Math.max(0, this.Integrity - (e.leak || 1));

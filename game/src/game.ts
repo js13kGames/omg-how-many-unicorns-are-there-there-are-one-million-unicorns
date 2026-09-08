@@ -6,7 +6,7 @@ import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
 import {Battle, PADS, TOWER_COSTS} from "./battle.js";
-import {sprite} from "./scenes/sce_fortress.js";
+import {sprite, scene_fortress} from "./scenes/sce_fortress.js";
 import {destroy_entity} from "../lib/world.js";
 import {fixed_steps, meadow_field, STEP} from "./navigation.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
@@ -80,12 +80,17 @@ export class Game extends Game3D {
             document.querySelector("#pause")!.textContent = this.Paused ? "Resume" : "Pause";
         });
         document.querySelector("#retry")!.addEventListener("click", () => {
-            for (const ent of this.Actors.values()) destroy_entity(this.World, ent);
+            this.World = new World(WORLD_CAPACITY);
             this.Actors.clear();
-            for (const ent of this.Towers) destroy_entity(this.World, ent);
             this.Towers = [];
+            this.Beams = [];
+            this.Debris = [];
+            this.Cameras = [];
             this.FreezeStart = null;
             this.Battle = new Battle();
+            this.Battle.SetMap(Number(document.querySelector<HTMLSelectElement>("#map")!.value));
+            scene_fortress(this);
+            this.ViewportResized = true;
             this.ApplyProgress();
             this.Rewarded = false;
             this.Remainder = 0;

@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 18,855 bytes. All seven towers, five enemy types, and five abilities have initial logic. Pegasus schedules twelve blasts along a line; Divine applies line damage for three seconds after a warning delay; Apocalypse applies a large delayed blast with a 90-second cooldown. Ability timing/input checks and all regression checks passed. Browser Apocalypse input queued one effect and set its cooldown with no WebGL error. These are initial implementations: visible warning art, Prism reflection, true Cannon projectile travel, Cupcake flight, distinct art, maps, progression tree, Royal support, audio, and large-scale validation remain open.
+The current release is 19,216 bytes. Five authored map layouts are selectable on retry. Navigation and visible walls use the same obstacle function. Map checks passed for reachable spawns, clear build pads, and movement boundaries. Browser switching through all five maps kept one camera and produced no WebGL errors. Seven towers, five enemies, and five abilities have initial logic. Remaining work includes Prism reflection, projectile travel, visible ability warnings, distinct art, progression tree, Royal support, audio, balance, and large-scale validation.
 
 ## Measured CPU simulation check
 
