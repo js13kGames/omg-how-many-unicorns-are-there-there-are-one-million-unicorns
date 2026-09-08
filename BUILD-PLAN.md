@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 17,679 bytes. All five enemy archetypes now have distinct speed, health, mass, and fortress damage. Crystal armor reduces small hits. The final wave includes a large Royal enemy. Enemy, weapon, freeze, combat, wave, and progress checks passed. The automated campaign completed in 243.65 seconds with 11,008 kills and 80 integrity; the Royal reached the fortress. Browser checks confirmed Royal health 1,500 and scale 2.4 with no WebGL error. Royal support behavior, remaining towers and abilities, additional maps, upgrade tree, audio, balance, and large-scale validation remain open.
+The current release is 18,131 bytes. All seven tower types have initial attack logic. Sprayer applies cone damage and vulnerability; Cannon applies line penetration with damage decay; Prism applies repeated line damage; Cupcake applies area slow and vulnerability. Tower geometry/status checks and all existing regression checks passed. Browser Cupcake purchase spent 100 Stars and rendered without a WebGL error. These are initial implementations: Prism reflection, true Cannon projectile travel, Cupcake flight, distinct art, remaining abilities, maps, progression tree, Royal support, audio, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 

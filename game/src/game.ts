@@ -5,7 +5,7 @@ import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
-import {Battle, PADS} from "./battle.js";
+import {Battle, PADS, TOWER_COSTS} from "./battle.js";
 import {sprite} from "./scenes/sce_fortress.js";
 import {destroy_entity} from "../lib/world.js";
 import {fixed_steps, meadow_field, STEP} from "./navigation.js";
@@ -233,9 +233,10 @@ export class Game extends Game3D {
         values[2].textContent = `${this.Battle.Stars} Stars`;
         document.querySelectorAll<HTMLButtonElement>("#build button").forEach((button, i) => {
             const [x, y] = PADS[i];
-            const cost = [60, 100, 90][
-                Number(document.querySelector<HTMLSelectElement>("#tower-kind")!.value)
-            ];
+            const cost =
+                TOWER_COSTS[
+                    Number(document.querySelector<HTMLSelectElement>("#tower-kind")!.value)
+                ];
             button.textContent = `Pad ${i + 1} · ${cost} Stars`;
             button.disabled =
                 this.Battle.Stars < cost ||

@@ -1,5 +1,15 @@
 import {blocked, MAP_WIDTH as W, MAP_HEIGHT as H, meadow_field, STEP} from "./navigation.js";
 
+export const TOWER_COSTS = [60, 100, 90, 80, 120, 140, 100];
+export const TOWER_NAMES = [
+    "Star Blaster",
+    "Cloud Mortar",
+    "Friendship Coil",
+    "Rainbow Sprayer",
+    "Candy Cannon",
+    "Prism Beam",
+    "Cupcake Launcher",
+];
 export const PADS = [
     [37, 23],
     [37, 12],
@@ -23,6 +33,8 @@ export interface Enemy {
     mass?: number;
     armor?: number;
     leak?: number;
+    slow?: number;
+    vulnerable?: number;
 }
 export class Battle {
     Enemies: Enemy[] = [];
@@ -99,6 +111,7 @@ export class Battle {
     }
     DamageEnemy(e: Enemy, damage: number) {
         if (e.hp <= 0 || damage <= 0) return;
+        damage *= (e.vulnerable || 0) > 0 ? 1.15 : 1;
         e.hp -= Math.max(Math.min(1, damage), damage - (e.armor || 0));
         if (e.hp <= 0) {
             this.Kills++;
@@ -124,18 +137,18 @@ export class Battle {
         if (
             !Number.isInteger(kind) ||
             kind < 0 ||
-            kind > 2 ||
+            kind > 6 ||
             !Number.isInteger(pad) ||
             pad < 0 ||
             pad >= PADS.length ||
             this.Integrity <= 0 ||
             this.Won ||
-            this.Stars < [60, 100, 90][kind]
+            this.Stars < TOWER_COSTS[kind]
         )
             return false;
         const [x, y] = PADS[pad];
         if (this.Towers.some((t) => t.x === x && t.y === y)) return false;
-        this.Stars -= [60, 100, 90][kind];
+        this.Stars -= TOWER_COSTS[kind];
         this.Towers.push({x, y, clock: 0, kind});
         return true;
     }
@@ -242,6 +255,8 @@ export class Battle {
         this.Grid();
         for (const e of this.Enemies) {
             if (e.hp <= 0) continue;
+            e.slow = Math.max(0, (e.slow || 0) - STEP);
+            e.vulnerable = Math.max(0, (e.vulnerable || 0) - STEP);
             if ((e.frozen || 0) > 0) {
                 e.frozen = Math.max(0, e.frozen! - STEP);
                 e.vx = 0;
@@ -273,8 +288,8 @@ export class Battle {
             let dx = tx,
                 dy = ty,
                 length = Math.hypot(dx, dy) || 1;
-            dx = (dx / length) * (e.speed || 2.8);
-            dy = (dy / length) * (e.speed || 2.8);
+            dx = (dx / length) * (e.speed || 2.8) * ((e.slow || 0) > 0 ? 0.7 : 1);
+            dy = (dy / length) * (e.speed || 2.8) * ((e.slow || 0) > 0 ? 0.7 : 1);
             let checked = 0;
             // ponytail: sample at most 24 neighbours for separation; use density forces if dense chokes need more pressure.
             for (let y = Math.max(0, cy - 1); y <= Math.min(H - 1, cy + 1); y++)
@@ -332,6 +347,58 @@ export class Battle {
                         ],
                 );
                 if (targets.length) {
+                    if (tower.kind >= 3) {
+                        const aim = this.Enemies[targets[0]],
+                            dx = aim.x - tower.x,
+                            dy = aim.y - tower.y,
+                            len = Math.hypot(dx, dy) || 1,
+                            ux = dx / len,
+                            uy = dy / len;
+                        if (tower.kind === 6) {
+                            for (const i of this.Query(aim.x, aim.y, 4)) {
+                                const e = this.Enemies[i];
+                                e.slow = 3;
+                                e.vulnerable = 3;
+                                this.DamageEnemy(e, this.Damage);
+                            }
+                            this.Blast = {x: aim.x, y: aim.y, life: 0.4};
+                            tower.clock = 1.5;
+                        } else {
+                            const line = targets.filter((i) => {
+                                const e = this.Enemies[i],
+                                    px = e.x - tower.x,
+                                    py = e.y - tower.y,
+                                    along = px * ux + py * uy;
+                                return (
+                                    along >= 0 &&
+                                    (tower.kind === 3
+                                        ? along / (Math.hypot(px, py) || 1) > 0.8
+                                        : Math.abs(px * uy - py * ux) < 0.5)
+                                );
+                            });
+                            line.sort((a, b) => {
+                                const ea = this.Enemies[a],
+                                    eb = this.Enemies[b];
+                                return (ea.x - eb.x) * ux + (ea.y - eb.y) * uy;
+                            });
+                            let damage = tower.kind === 4 ? this.Damage * 8 : this.Damage * 0.4;
+                            for (const i of line) {
+                                const e = this.Enemies[i];
+                                if (tower.kind === 3) e.vulnerable = 2;
+                                this.DamageEnemy(e, damage);
+                                if (tower.kind === 4) damage *= 0.85;
+                            }
+                            tower.clock = tower.kind === 4 ? 1.2 : 0.1;
+                        }
+                        this.Shots.push({
+                            x: tower.x + ux * 12,
+                            y: tower.y + uy * 12,
+                            fromX: tower.x,
+                            fromY: tower.y,
+                            life: 0.12,
+                        });
+                        continue;
+                    }
                     if (tower.kind === 1) {
                         let best = targets[0],
                             density = -1;
