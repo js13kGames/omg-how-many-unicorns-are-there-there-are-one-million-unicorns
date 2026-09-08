@@ -4,6 +4,8 @@ function check(ok: boolean, message: string) {
 }
 const field = flow_field(3, 3, new Uint8Array(9), 8);
 check(field[0] === 4 && field[8] === 0, "Equal-cost shortest route");
+const wide = flow_field(3, 3, new Uint8Array(9), 2, [2, 5, 8]);
+check(wide[0] === 2 && wide[3] === 2 && wide[6] === 2, "Wide goal keeps approach lanes equal");
 const split = flow_field(3, 3, Uint8Array.from([0, 1, 0, 0, 1, 0, 0, 1, 0]), 8);
 check(split[0] === -1 && split[1] === -1, "Unreachable cells and walls");
 const corner = flow_field(2, 2, Uint8Array.from([0, 1, 1, 0]), 3);

@@ -12,16 +12,27 @@ export function blocked(x: number, y: number) {
     );
 }
 
-export function flow_field(width: number, height: number, walls: Uint8Array, goal: number) {
+export function flow_field(
+    width: number,
+    height: number,
+    walls: Uint8Array,
+    goal: number,
+    goals: number[] = [goal],
+) {
     if (walls.length !== width * height || goal < 0 || goal >= walls.length || walls[goal]) {
         throw new Error("Invalid navigation map or goal");
     }
     const distance = new Int32Array(walls.length).fill(-1);
     const queue = new Int32Array(walls.length);
     let head = 0,
-        tail = 1;
-    queue[0] = goal;
-    distance[goal] = 0;
+        tail = 0;
+    for (const target of goals) {
+        if (!Number.isInteger(target) || target < 0 || target >= walls.length || walls[target])
+            throw new Error("Invalid navigation goal");
+        if (distance[target] === 0) continue;
+        queue[tail++] = target;
+        distance[target] = 0;
+    }
     while (head < tail) {
         const cell = queue[head++];
         const x = cell % width,
@@ -55,7 +66,13 @@ export function meadow_field() {
     const walls = new Uint8Array(MAP_WIDTH * MAP_HEIGHT);
     for (let y = 0; y < MAP_HEIGHT; y++)
         for (let x = 0; x < MAP_WIDTH; x++) walls[y * MAP_WIDTH + x] = +blocked(x, y);
-    return flow_field(MAP_WIDTH, MAP_HEIGHT, walls, 18 * MAP_WIDTH + 57);
+    return flow_field(
+        MAP_WIDTH,
+        MAP_HEIGHT,
+        walls,
+        18 * MAP_WIDTH + 57,
+        [17, 18, 19].map((y) => y * MAP_WIDTH + 57),
+    );
 }
 
 export function fixed_steps(remainder: number, delta: number, speed: number) {

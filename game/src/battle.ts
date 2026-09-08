@@ -139,9 +139,8 @@ export class Battle {
             const cx = Math.floor(e.x),
                 cy = Math.floor(e.y),
                 cell = cy * W + cx;
-            let best = this.Field[cell],
-                tx = cx + 0.5,
-                ty = cy + 0.5;
+            let tx = 0,
+                ty = 0;
             for (const [dx, dy] of [
                 [1, 0],
                 [0, 1],
@@ -153,15 +152,14 @@ export class Battle {
                 if (
                     !blocked(nx, ny) &&
                     this.Field[ny * W + nx] >= 0 &&
-                    this.Field[ny * W + nx] < best
+                    this.Field[ny * W + nx] < this.Field[cell]
                 ) {
-                    best = this.Field[ny * W + nx];
-                    tx = nx + 0.5;
-                    ty = ny + 0.5;
+                    tx += dx;
+                    ty += dy;
                 }
             }
-            let dx = tx - e.x,
-                dy = ty - e.y,
+            let dx = tx,
+                dy = ty,
                 length = Math.hypot(dx, dy) || 1;
             dx = (dx / length) * 2.8;
             dy = (dy / length) * 2.8;

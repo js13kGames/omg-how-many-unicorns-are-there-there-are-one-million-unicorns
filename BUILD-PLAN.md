@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 13,914 bytes. It includes moving enemies, tower build pads, Stars, shots, lighting, retry, and a targeted Magic Missile with damage falloff, separate knockback velocity, and an eight-second cooldown. Type checks and runnable crowd/combat/explosion checks passed. A browser map-click test applied damage, set the cooldown, and produced no WebGL error. Waves, meta progress, remaining weapons, crowd-scale validation, and final presentation are incomplete.
+The current release is 13,936 bytes. It includes moving enemies, tower build pads, Stars, shots, lighting, retry, and a targeted Magic Missile with damage falloff, separate knockback velocity, and an eight-second cooldown. The flow now combines descending directions rather than snapping to cell centres, and the fortress has a three-cell goal. This removes the horizontal cell-centre lanes, but final fluid motion still needs tuning. Type checks and navigation/crowd/combat/explosion checks passed. A 15-second browser simulation had 1,180 live enemies, 320 kills, full integrity, and no WebGL error. This is not a frame-rate test. Waves, meta progress, remaining weapons, crowd-scale validation, and final presentation are incomplete.
 
 ## Updated visual and scale target
 
