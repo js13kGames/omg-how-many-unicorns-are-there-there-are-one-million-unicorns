@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 15,306 bytes. The eight-wave loop now includes a run summary, Sparkles, damage and fire-rate upgrades, and versioned local saves. Progress, wave, and combat checks passed. Three browser-injected run endings each paid once; three damage purchases raised retry damage from 3 to 5.184. A storage-failure test showed a warning. Malformed and newer saves are rejected without overwrite. Full playthrough balance, remaining weapons, large-scale validation, and final presentation are incomplete.
+The current release is 15,877 bytes. Cloud Mortar and Friendship Coil are now available in the tower selector. Mortars target dense cells and apply delayed area damage with knockback. Coil attacks visit each chain target once. Weapon, combat, wave, and progress checks passed. Browser purchases selected the correct tower types and costs with no WebGL error. Freeze, Sprinter, distinct tower art, full playthrough balance, remaining content, and large-scale validation are incomplete.
 
 ## Measured CPU simulation check
 
@@ -156,8 +156,8 @@ Complete one row at a time. Split a row into smaller commits if it contains sepa
 | B06 | In progress | Add a test explosion, knockback, density display, and repeatable crowd stress scenes. | Test 1k/5k/10k; record frame and simulation costs; inspect choke compression and recovery after blast. Stop content work if crowd motion fails. |
 | B07 | In progress | Add wave segments, Stars, valid tower placement, win/loss, and retry. | Check budgets, purchases, forbidden pads, pause-build, last-wave completion, and one run end. Test first threat at 20–40 seconds. |
 | B08 | In progress | Add Sparkles, upgrades, summary, and safe meta saves. | Check reward once, purchase rules, invalid/newer saves, storage failure, reload, and retry. Play three runs and compare progress. |
-| B09 | Not started | Add Cloud Mortar, density targeting, and bounded death effects. | Check radius/falloff and mass-based knockback; record dense-wave costs with effects enabled. |
-| B10 | Not started | Add Friendship Coil, Sprinter, Magic Missile, and Freeze Rainbow. | Check unique chain targets, chain decay, area input, cooldowns, freeze expiry, and UI/map input conflicts. |
+| B09 | In progress | Add Cloud Mortar, density targeting, and bounded death effects. | Check radius/falloff and mass-based knockback; record dense-wave costs with effects enabled. |
+| B10 | In progress | Add Friendship Coil, Sprinter, Magic Missile, and Freeze Rainbow. | Check unique chain targets, chain decay, area input, cooldowns, freeze expiry, and UI/map input conflicts. |
 | B11 | Not started | Complete the first playable version with 8 waves, tutorial, and full HUD. | Play win and loss routes; test pan/zoom, pause/2x, upgrade/retry, keyboard controls, and visible labels that do not rely only on color. |
 | B12 | Not started | Add audio, adjust effects, and tune the first playable version. | Threat at 20–40 seconds; large effect by 60 seconds; useful upgrades after loss; repeat performance checks on a recorded device. |
 | B13 | Not started | Add the remaining design content only after crowd and retry tests pass. | Separate tasks for each tower, ability, enemy, map, and upgrade group; regression and performance checks for each. |

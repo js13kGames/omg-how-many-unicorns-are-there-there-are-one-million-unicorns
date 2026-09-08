@@ -63,21 +63,46 @@ export class Battle {
         this.Blast = {x, y, life: 0.5};
         return true;
     }
-    Towers: {x: number; y: number; clock: number}[] = [];
-    Build(pad: number) {
+    DamageEnemy(e: Enemy, damage: number) {
+        if (e.hp <= 0) return;
+        e.hp -= damage;
+        if (e.hp <= 0) {
+            this.Kills++;
+            this.Stars++;
+        }
+    }
+    AreaDamage(x: number, y: number, radius: number, damage: number) {
+        for (const i of this.Query(x, y, radius)) {
+            const e = this.Enemies[i],
+                dx = e.x - x,
+                dy = e.y - y,
+                d = Math.hypot(dx, dy),
+                falloff = 1 - d / radius;
+            this.DamageEnemy(e, damage * falloff);
+            e.kx = (e.kx || 0) + (d ? dx / d : 1) * falloff * 8;
+            e.ky = (e.ky || 0) + (d ? dy / d : 0) * falloff * 8;
+        }
+        this.Blast = {x, y, life: 0.5};
+    }
+    Mortars: {x: number; y: number; delay: number; damage: number}[] = [];
+    Towers: {x: number; y: number; clock: number; kind: number}[] = [];
+    Build(pad: number, kind = 0) {
         if (
+            !Number.isInteger(kind) ||
+            kind < 0 ||
+            kind > 2 ||
             !Number.isInteger(pad) ||
             pad < 0 ||
             pad >= PADS.length ||
             this.Integrity <= 0 ||
             this.Won ||
-            this.Stars < 60
+            this.Stars < [60, 100, 90][kind]
         )
             return false;
         const [x, y] = PADS[pad];
         if (this.Towers.some((t) => t.x === x && t.y === y)) return false;
-        this.Stars -= 60;
-        this.Towers.push({x, y, clock: 0});
+        this.Stars -= [60, 100, 90][kind];
+        this.Towers.push({x, y, clock: 0, kind});
         return true;
     }
     Wave = 0;
@@ -230,6 +255,11 @@ export class Battle {
             }
         }
         this.Grid();
+        for (const mortar of this.Mortars) {
+            mortar.delay -= STEP;
+            if (mortar.delay <= 0) this.AreaDamage(mortar.x, mortar.y, 4, mortar.damage);
+        }
+        this.Mortars = this.Mortars.filter((m) => m.delay > 0);
         this.FireClock -= STEP;
         if (this.TowerEnabled && this.FireClock <= 0) {
             for (const tower of this.Towers) {
@@ -246,14 +276,56 @@ export class Battle {
                         ],
                 );
                 if (targets.length) {
+                    if (tower.kind === 1) {
+                        let best = targets[0],
+                            density = -1;
+                        for (const i of targets) {
+                            const e = this.Enemies[i],
+                                count = this.Cells[Math.floor(e.y) * W + Math.floor(e.x)].length;
+                            if (count > density) {
+                                density = count;
+                                best = i;
+                            }
+                        }
+                        const e = this.Enemies[best];
+                        this.Mortars.push({x: e.x, y: e.y, delay: 0.6, damage: this.Damage * 6});
+                        tower.clock = 1.8;
+                        continue;
+                    }
                     const e = this.Enemies[targets[0]];
-                    e.hp -= this.Damage;
-                    if (e.hp <= 0) {
-                        this.Kills++;
-                        this.Stars++;
+                    this.DamageEnemy(e, this.Damage);
+                    if (tower.kind === 2) {
+                        const hit = new Set<number>([targets[0]]);
+                        let previous = e;
+                        for (let jump = 0; jump < 10; jump++) {
+                            let next = -1,
+                                nearest = 9;
+                            for (const i of this.Query(previous.x, previous.y, 3)) {
+                                const candidate = this.Enemies[i],
+                                    d =
+                                        (candidate.x - previous.x) ** 2 +
+                                        (candidate.y - previous.y) ** 2;
+                                if (!hit.has(i) && d < nearest) {
+                                    next = i;
+                                    nearest = d;
+                                }
+                            }
+                            if (next < 0) break;
+                            hit.add(next);
+                            const target = this.Enemies[next];
+                            this.DamageEnemy(target, this.Damage * 0.9 ** jump);
+                            this.Shots.push({
+                                x: target.x,
+                                y: target.y,
+                                fromX: previous.x,
+                                fromY: previous.y,
+                                life: 0.18,
+                            });
+                            previous = target;
+                        }
                     }
                     this.Shots.push({x: e.x, y: e.y, fromX: tower.x, fromY: tower.y, life: 0.12});
-                    tower.clock = this.FireInterval;
+                    tower.clock = tower.kind === 2 ? 0.5 : this.FireInterval;
                 }
             }
         }

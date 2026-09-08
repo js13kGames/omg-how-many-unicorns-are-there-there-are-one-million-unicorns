@@ -99,7 +99,12 @@ export class Game extends Game3D {
         PADS.forEach((_, i) => {
             const button = document.createElement("button");
             button.textContent = `Pad ${i + 1} · 60 Stars`;
-            button.addEventListener("click", () => this.Battle.Build(i));
+            button.addEventListener("click", () =>
+                this.Battle.Build(
+                    i,
+                    Number(document.querySelector<HTMLSelectElement>("#tower-kind")!.value),
+                ),
+            );
             build.append(button);
         });
         document
@@ -172,13 +177,31 @@ export class Game extends Game3D {
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
         while (this.Towers.length < this.Battle.Towers.length) {
             const t = this.Battle.Towers[this.Towers.length];
-            this.Towers.push(sprite(this, "tower", t.x - 32, t.y - 18, 2.7, 2.7));
+            this.Towers.push(
+                sprite(
+                    this,
+                    "tower",
+                    t.x - 32,
+                    t.y - 18,
+                    2.7,
+                    2.7,
+                    t.kind === 1
+                        ? [0.65, 0.8, 1, 1]
+                        : t.kind === 2
+                          ? [0.85, 0.6, 1, 1]
+                          : [1, 1, 1, 1],
+                ),
+            );
         }
         values[2].textContent = `${this.Battle.Stars} Stars`;
         document.querySelectorAll<HTMLButtonElement>("#build button").forEach((button, i) => {
             const [x, y] = PADS[i];
+            const cost = [60, 100, 90][
+                Number(document.querySelector<HTMLSelectElement>("#tower-kind")!.value)
+            ];
+            button.textContent = `Pad ${i + 1} · ${cost} Stars`;
             button.disabled =
-                this.Battle.Stars < 60 ||
+                this.Battle.Stars < cost ||
                 this.Battle.Integrity <= 0 ||
                 this.Battle.Won ||
                 this.Battle.Towers.some((t) => t.x === x && t.y === y);
