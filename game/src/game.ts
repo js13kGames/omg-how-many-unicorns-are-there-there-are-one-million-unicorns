@@ -190,7 +190,7 @@ export class Game extends Game3D {
                 this.Actors.set(e.id, ent);
             }
             const local = this.World.LocalTransform2D[ent];
-            local.Scale[0] = local.Scale[1] = (e.speed || 2.8) > 3 ? 0.55 : 0.7;
+            local.Scale[0] = local.Scale[1] = [0.7, 0.55, 1.2, 0.9, 2.4][e.kind || 0];
             this.World.Render2D[ent].Color.set(
                 (e.frozen || 0) > 0 ? [0.4, 0.85, 1, 1] : [1, 0.75 + (e.id % 4) * 0.06, 0.92, 1],
             );

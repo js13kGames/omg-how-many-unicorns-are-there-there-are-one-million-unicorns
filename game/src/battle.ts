@@ -19,6 +19,10 @@ export interface Enemy {
     ky?: number;
     speed?: number;
     frozen?: number;
+    kind?: number;
+    mass?: number;
+    armor?: number;
+    leak?: number;
 }
 export class Battle {
     Enemies: Enemy[] = [];
@@ -84,22 +88,18 @@ export class Battle {
                 dy = e.y - y,
                 d = Math.hypot(dx, dy),
                 strength = 1 - d / 5;
-            e.hp -= 12 * strength;
-            if (e.hp <= 0) {
-                this.Kills++;
-                this.Stars++;
-            }
+            this.DamageEnemy(e, 12 * strength);
             const angle = e.id * 2.399;
-            e.kx = (e.kx || 0) + (d ? dx / d : Math.cos(angle)) * strength * 12;
-            e.ky = (e.ky || 0) + (d ? dy / d : Math.sin(angle)) * strength * 12;
+            e.kx = (e.kx || 0) + ((d ? dx / d : Math.cos(angle)) * strength * 12) / (e.mass || 1);
+            e.ky = (e.ky || 0) + ((d ? dy / d : Math.sin(angle)) * strength * 12) / (e.mass || 1);
         }
         this.MissileCooldown = 8;
         this.Blast = {x, y, life: 0.5};
         return true;
     }
     DamageEnemy(e: Enemy, damage: number) {
-        if (e.hp <= 0) return;
-        e.hp -= damage;
+        if (e.hp <= 0 || damage <= 0) return;
+        e.hp -= Math.max(Math.min(1, damage), damage - (e.armor || 0));
         if (e.hp <= 0) {
             this.Kills++;
             this.Stars++;
@@ -113,8 +113,8 @@ export class Battle {
                 d = Math.hypot(dx, dy),
                 falloff = 1 - d / radius;
             this.DamageEnemy(e, damage * falloff);
-            e.kx = (e.kx || 0) + (d ? dx / d : 1) * falloff * 8;
-            e.ky = (e.ky || 0) + (d ? dy / d : 0) * falloff * 8;
+            e.kx = (e.kx || 0) + ((d ? dx / d : 1) * falloff * 8) / (e.mass || 1);
+            e.ky = (e.ky || 0) + ((d ? dy / d : 0) * falloff * 8) / (e.mass || 1);
         }
         this.Blast = {x, y, life: 0.5};
     }
@@ -163,13 +163,27 @@ export class Battle {
         return this.Seed / 4294967296;
     }
     Spawn() {
+        const kind =
+            this.Wave === 8 && this.Spawned === this.Limit - 1
+                ? 4
+                : this.Wave >= 6 && this.Spawned % 17 === 0
+                  ? 3
+                  : this.Wave >= 4 && this.Spawned % 13 === 0
+                    ? 2
+                    : this.Wave >= 3 && this.Spawned % 5 === 0
+                      ? 1
+                      : 0;
         const e = {
             x: 1 + this.Random() * 3,
             y: 2 + this.Random() * 32,
             vx: 0,
             vy: 0,
-            speed: this.Wave >= 3 && this.Spawned % 5 === 0 ? 4.8 : 2.8,
-            hp: 3,
+            kind,
+            speed: [2.8, 4.8, 1.8, 2.4, 1.4][kind],
+            hp: [3, 2, 36, 18, 1500][kind],
+            mass: [1, 0.7, 4, 2, 15][kind],
+            armor: kind === 3 ? 2 : 0,
+            leak: [1, 1, 5, 2, 20][kind],
             id: this.Spawned++,
         };
         this.Enemies.push(e);
@@ -293,7 +307,7 @@ export class Battle {
             if (!blocked(Math.floor(e.x), Math.floor(ny))) e.y = ny;
             if (e.x > 56 && Math.abs(e.y - 18) < 1.5) {
                 e.hp = 0;
-                this.Integrity = Math.max(0, this.Integrity - 1);
+                this.Integrity = Math.max(0, this.Integrity - (e.leak || 1));
             }
         }
         this.Grid();

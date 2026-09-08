@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 17,563 bytes. The first playable version has three towers, two enemy types, two abilities, eight waves, upgrades, saves, first-use hints, and bounded death effects. The automated campaign completed all eight waves in 166.98 seconds with 11,009 kills and full integrity. This verifies completion, not balance. Browser effects expired without WebGL errors. Distinct tower art, additional maps and content, audio, full balance, and large-scale validation remain open.
+The current release is 17,679 bytes. All five enemy archetypes now have distinct speed, health, mass, and fortress damage. Crystal armor reduces small hits. The final wave includes a large Royal enemy. Enemy, weapon, freeze, combat, wave, and progress checks passed. The automated campaign completed in 243.65 seconds with 11,008 kills and 80 integrity; the Royal reached the fortress. Browser checks confirmed Royal health 1,500 and scale 2.4 with no WebGL error. Royal support behavior, remaining towers and abilities, additional maps, upgrade tree, audio, balance, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 
