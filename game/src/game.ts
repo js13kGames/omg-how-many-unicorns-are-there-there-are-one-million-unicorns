@@ -3,6 +3,9 @@ import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
+import {Battle} from "./battle.js";
+import {sprite} from "./scenes/sce_fortress.js";
+import {destroy_entity} from "../lib/world.js";
 import {fixed_steps, meadow_field, STEP} from "./navigation.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
 import {sys_control_camera} from "./systems/sys_control_camera.js";
@@ -27,6 +30,8 @@ export class Game extends Game3D {
     Speed = 1;
     Paused = false;
     Time = 0;
+    Battle = new Battle();
+    Actors = new Map<number, number>();
     Remainder = 0;
 
     constructor() {
@@ -50,7 +55,36 @@ export class Game extends Game3D {
         sys_control_camera(this, delta);
         const steps = fixed_steps(this.Remainder, delta, this.Paused ? 0 : this.Speed);
         this.Remainder = steps.remainder;
-        for (let i = 0; i < steps.count; i++) this.Time += STEP;
+        for (let i = 0; i < steps.count; i++) {
+            this.Time += STEP;
+            this.Battle.Tick();
+        }
+        const live = new Set(this.Battle.Enemies.map((e) => e.id));
+        for (const [id, ent] of this.Actors)
+            if (!live.has(id)) {
+                destroy_entity(this.World, ent);
+                this.Actors.delete(id);
+            }
+        for (const e of this.Battle.Enemies) {
+            let ent = this.Actors.get(e.id);
+            if (ent === undefined) {
+                ent = sprite(this, "unicorn", e.x - 32, e.y - 18, 0.7, 0.7, [
+                    1,
+                    0.75 + (e.id % 4) * 0.06,
+                    0.92,
+                    1,
+                ]);
+                this.Actors.set(e.id, ent);
+            }
+            const local = this.World.LocalTransform2D[ent];
+            local.Translation[0] = e.x - 32;
+            local.Translation[1] = e.y - 18;
+            this.World.Render2D[ent].Detail[0] = -(e.y - 18) / 100;
+            this.World.Signature[ent] |= Has.Dirty;
+        }
+        const values = document.querySelectorAll("#status b");
+        values[0].textContent = `${this.Battle.Integrity} / 100`;
+        values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
         sys_transform2d(this, delta);
         sys_resize2d(this, delta);
         sys_camera2d(this, delta);

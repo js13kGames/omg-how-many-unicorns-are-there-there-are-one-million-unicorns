@@ -40,15 +40,4 @@ export function scene_fortress(game: Game) {
     sprite(game, "stone", 28, 0, 5, 7, undefined, 0.65);
     sprite(game, "ground", 25.7, 0, 0.4, 3, [0.64, 0.85, 0.83, 1], 0.7);
     sprite(game, "tower", 5, 5, 2.7, 2.7);
-    sprite(game, "tower", 16, -5, 2.7, 2.7);
-    for (let i = 0; i < 180; i++) {
-        const x = -27 + (i % 20) * 1.15;
-        const y = -7 + Math.floor(i / 20) * 1.5 + Math.sin(i * 3.1) * 0.25;
-        sprite(game, "unicorn", x, y, 1.4, 1.4, [
-            1,
-            0.72 + (i % 4) * 0.08,
-            0.86 + (i % 3) * 0.04,
-            1,
-        ]);
-    }
 }
