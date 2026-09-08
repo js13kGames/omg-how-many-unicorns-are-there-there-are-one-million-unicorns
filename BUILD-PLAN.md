@@ -6,6 +6,20 @@ The source review is complete. There is enough data to build Prototype Zero and 
 
 The current release is 13,936 bytes. It includes moving enemies, tower build pads, Stars, shots, lighting, retry, and a targeted Magic Missile with damage falloff, separate knockback velocity, and an eight-second cooldown. The flow now combines descending directions rather than snapping to cell centres, and the fortress has a three-cell goal. This removes the horizontal cell-centre lanes, but final fluid motion still needs tuning. Type checks and navigation/crowd/combat/explosion checks passed. A 15-second browser simulation had 1,180 live enemies, 320 kills, full integrity, and no WebGL error. This is not a frame-rate test. Waves, meta progress, remaining weapons, crowd-scale validation, and final presentation are incomplete.
 
+## Measured CPU simulation check
+
+Run `npx esbuild checks/stress.ts --bundle --platform=node --outfile=/tmp/unicorn-stress.cjs && node /tmp/unicorn-stress.cjs` from `game/`.
+
+On Apple M1 Max, Node 24.5.0, with 30 warm-up steps and 120 measured steps:
+
+| Live enemies | Median step | 95th percentile step |
+| --- | --- | --- |
+| 1,000 | 0.74 ms | 1.50 ms |
+| 5,000 | 3.64 ms | 4.07 ms |
+| 10,000 | 7.73 ms | 8.95 ms |
+
+This check excludes rendering and tower targeting. It does not prove browser frame rate or 100,000-unit capacity. An explosion and 60 recovery steps also passed finite-position and wall checks. Browser frame-time and dense-choke stress checks remain open.
+
 ## Updated visual and scale target
 
 Use `Sir, We Have an Orc Problem` as the user's visual and gameplay reference. Show a dense mass of unicorns with fluid-like motion. The player builds towers. Weapon fire must produce visible light effects on the battlefield. The spaced rows in the renderer test are temporary, not the target presentation.
