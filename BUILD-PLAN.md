@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 18,131 bytes. All seven tower types have initial attack logic. Sprayer applies cone damage and vulnerability; Cannon applies line penetration with damage decay; Prism applies repeated line damage; Cupcake applies area slow and vulnerability. Tower geometry/status checks and all existing regression checks passed. Browser Cupcake purchase spent 100 Stars and rendered without a WebGL error. These are initial implementations: Prism reflection, true Cannon projectile travel, Cupcake flight, distinct art, remaining abilities, maps, progression tree, Royal support, audio, and large-scale validation remain open.
+The current release is 18,855 bytes. All seven towers, five enemy types, and five abilities have initial logic. Pegasus schedules twelve blasts along a line; Divine applies line damage for three seconds after a warning delay; Apocalypse applies a large delayed blast with a 90-second cooldown. Ability timing/input checks and all regression checks passed. Browser Apocalypse input queued one effect and set its cooldown with no WebGL error. These are initial implementations: visible warning art, Prism reflection, true Cannon projectile travel, Cupcake flight, distinct art, maps, progression tree, Royal support, audio, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 

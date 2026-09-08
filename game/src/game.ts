@@ -96,13 +96,24 @@ export class Game extends Game3D {
             if (event.target !== this.Ui || this.Paused || this.Cameras.length === 0) return;
             const point: [number, number] = [event.clientX, event.clientY];
             viewport_to_world(point, this.World.Camera2D[this.Cameras[0]], point);
-            if (document.querySelector<HTMLSelectElement>("#ability")!.value === "freeze") {
+            const ability = document.querySelector<HTMLSelectElement>("#ability")!.value;
+            if (["freeze", "flyby", "divine"].includes(ability)) {
                 if (!this.FreezeStart) this.FreezeStart = [point[0] + 32, point[1] + 18];
                 else {
-                    this.Battle.Freeze(...this.FreezeStart, point[0] + 32, point[1] + 18);
+                    if (ability === "freeze")
+                        this.Battle.Freeze(...this.FreezeStart, point[0] + 32, point[1] + 18);
+                    else
+                        this.Battle.Special(
+                            ability,
+                            ...this.FreezeStart,
+                            point[0] + 32,
+                            point[1] + 18,
+                        );
                     this.FreezeStart = null;
                 }
-            } else this.Battle.Explode(point[0] + 32, point[1] + 18);
+            } else if (ability === "apocalypse")
+                this.Battle.Special(ability, point[0] + 32, point[1] + 18);
+            else this.Battle.Explode(point[0] + 32, point[1] + 18);
         });
         const build = document.querySelector("#build")!;
         PADS.forEach((_, i) => {
@@ -209,6 +220,15 @@ export class Game extends Game3D {
                 : this.Battle.FreezeCooldown > 0
                   ? `Freeze: ${Math.ceil(this.Battle.FreezeCooldown)}s`
                   : "Click two points: Freeze ready";
+        const ability = document.querySelector<HTMLSelectElement>("#ability")!.value;
+        if (Object.hasOwn(this.Battle.SpecialCooldowns, ability))
+            document.querySelector("#missile")!.textContent = this.FreezeStart
+                ? "Click the line end"
+                : this.Battle.SpecialCooldowns[ability] > 0
+                  ? `${ability}: ${Math.ceil(this.Battle.SpecialCooldowns[ability])}s`
+                  : ability === "apocalypse"
+                    ? "Click target: Apocalypse ready"
+                    : "Click two points: ability ready";
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / 100`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;

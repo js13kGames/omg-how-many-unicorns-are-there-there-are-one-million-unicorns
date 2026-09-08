@@ -50,6 +50,33 @@ export class Battle {
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
     Stars = 180;
+    SpecialCooldowns: Record<string, number> = {flyby: 0, divine: 0, apocalypse: 0};
+    Specials: {
+        kind: string;
+        ax: number;
+        ay: number;
+        bx: number;
+        by: number;
+        time: number;
+        fired: number;
+    }[] = [];
+    Special(kind: string, ax: number, ay: number, bx = ax, by = ay) {
+        if (
+            !Object.hasOwn(this.SpecialCooldowns, kind) ||
+            this.SpecialCooldowns[kind] > 0 ||
+            this.Won ||
+            this.Integrity <= 0 ||
+            ![ax, ay, bx, by].every(Number.isFinite) ||
+            Math.min(ax, bx) < 0 ||
+            Math.max(ax, bx) >= W ||
+            Math.min(ay, by) < 0 ||
+            Math.max(ay, by) >= H
+        )
+            return false;
+        this.SpecialCooldowns[kind] = kind === "apocalypse" ? 90 : kind === "divine" ? 40 : 30;
+        this.Specials.push({kind, ax, ay, bx, by, time: 0, fired: 0});
+        return true;
+    }
     FreezeCooldown = 0;
     Freeze(ax: number, ay: number, bx: number, by: number) {
         if (
@@ -244,6 +271,8 @@ export class Battle {
                 (30 + this.Wave * 12) *
                 (this.WaveTime % 12 < 4 ? 0.65 : this.WaveTime % 12 < 9 ? 1.6 : 0.35);
         this.Time += STEP;
+        for (const key in this.SpecialCooldowns)
+            this.SpecialCooldowns[key] = Math.max(0, this.SpecialCooldowns[key] - STEP);
         this.FreezeCooldown = Math.max(0, this.FreezeCooldown - STEP);
         this.MissileCooldown = Math.max(0, this.MissileCooldown - STEP);
         if (this.Blast && (this.Blast.life -= STEP) <= 0) this.Blast = null;
@@ -326,6 +355,57 @@ export class Battle {
             }
         }
         this.Grid();
+        for (const special of this.Specials) {
+            special.time += STEP;
+            if (special.time < 0.6) continue;
+            if (special.kind === "apocalypse" && special.fired === 0) {
+                this.AreaDamage(special.ax, special.ay, 22, 500);
+                special.fired = 1;
+            } else if (special.kind === "flyby") {
+                const count = Math.min(12, Math.floor((special.time - 0.6) / 0.08) + 1);
+                while (special.fired < count) {
+                    const t = special.fired++ / 11;
+                    this.AreaDamage(
+                        special.ax + (special.bx - special.ax) * t,
+                        special.ay + (special.by - special.ay) * t,
+                        3.5,
+                        30,
+                    );
+                }
+            } else if (special.kind === "divine") {
+                const dx = special.bx - special.ax,
+                    dy = special.by - special.ay,
+                    len = dx * dx + dy * dy;
+                for (const i of this.Query(
+                    (special.ax + special.bx) / 2,
+                    (special.ay + special.by) / 2,
+                    Math.sqrt(len) / 2 + 1.5,
+                )) {
+                    const e = this.Enemies[i],
+                        t = len
+                            ? Math.max(
+                                  0,
+                                  Math.min(
+                                      1,
+                                      ((e.x - special.ax) * dx + (e.y - special.ay) * dy) / len,
+                                  ),
+                              )
+                            : 0;
+                    if ((e.x - special.ax - t * dx) ** 2 + (e.y - special.ay - t * dy) ** 2 < 2.25)
+                        this.DamageEnemy(e, 100 * STEP);
+                }
+                this.Shots.push({
+                    x: special.bx,
+                    y: special.by,
+                    fromX: special.ax,
+                    fromY: special.ay,
+                    life: 0.04,
+                });
+            }
+        }
+        this.Specials = this.Specials.filter(
+            (s) => s.time < (s.kind === "divine" ? 3.6 : s.kind === "flyby" ? 1.6 : 1),
+        );
         for (const mortar of this.Mortars) {
             mortar.delay -= STEP;
             if (mortar.delay <= 0) this.AreaDamage(mortar.x, mortar.y, 4, mortar.damage);
