@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 20,130 bytes. Cupcake now uses a delayed area impact shared with the mortar path, applying slow and vulnerability at impact. Cannon projectiles and Prism reflection are implemented. Tower checks verify delayed damage and support effects. Visible projectile arcs, ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
+The current release is 20,182 bytes. Tower firing now carries fractional cooldown time and can fire more than once per simulation step. The fire-rate check measured 51 damage at the base interval and 501 at a ten-times-faster interval. Tower, weapon, combat, and wave checks passed. Cupcake delayed impact, Cannon travel, and Prism reflection are implemented. Visible projectile arcs, ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 
