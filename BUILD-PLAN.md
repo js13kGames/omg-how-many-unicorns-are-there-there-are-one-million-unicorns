@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 13,936 bytes. It includes moving enemies, tower build pads, Stars, shots, lighting, retry, and a targeted Magic Missile with damage falloff, separate knockback velocity, and an eight-second cooldown. The flow now combines descending directions rather than snapping to cell centres, and the fortress has a three-cell goal. This removes the horizontal cell-centre lanes, but final fluid motion still needs tuning. Type checks and navigation/crowd/combat/explosion checks passed. A 15-second browser simulation had 1,180 live enemies, 320 kills, full integrity, and no WebGL error. This is not a frame-rate test. Waves, meta progress, remaining weapons, crowd-scale validation, and final presentation are incomplete.
+The current release is 14,255 bytes. The wave director now provides preparation, eight escalating budgets, spawn-rate segments, rewards, and explicit win/loss states. Unit checks cover preparation, duplicate starts, budgets, rewards paid once, and terminal-state actions. A browser play simulation cleared wave one and entered wave two with 327 kills and full integrity after 40 seconds. WebGL reported no error. Meta progress, remaining weapons, large-scale validation, and final presentation are incomplete.
 
 ## Measured CPU simulation check
 
@@ -18,7 +18,9 @@ On Apple M1 Max, Node 24.5.0, with 30 warm-up steps and 120 measured steps:
 | 5,000 | 3.64 ms | 4.07 ms |
 | 10,000 | 7.73 ms | 8.95 ms |
 
-This check excludes rendering and tower targeting. It does not prove browser frame rate or 100,000-unit capacity. An explosion and 60 recovery steps also passed finite-position and wall checks. Browser frame-time and dense-choke stress checks remain open.
+This check excludes rendering and tower targeting. It does not prove browser frame rate or 100,000-unit capacity. An explosion and 60 recovery steps also passed finite-position and wall checks.
+
+A separate Chrome 151 check at 1600×913 on ANGLE Metal / Apple M1 Max measured 60 synchronous simulation-plus-render calls with `gl.finish()`. Median / p95 milliseconds: 1k = 1.2 / 1.8; 5k = 4.3 / 6.2; 10k = 8.5 / 11.6. WebGL error was zero. These are call timings without towers, not sustained animation-frame rates. Dense-choke and release-scale tests remain open.
 
 ## Updated visual and scale target
 

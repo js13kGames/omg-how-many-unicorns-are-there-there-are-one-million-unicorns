@@ -37,6 +37,7 @@ export class Battle {
             !Number.isFinite(x + y) ||
             blocked(Math.floor(x), Math.floor(y)) ||
             this.Integrity <= 0 ||
+            this.Won ||
             this.MissileCooldown > 0
         )
             return false;
@@ -67,6 +68,7 @@ export class Battle {
             pad < 0 ||
             pad >= PADS.length ||
             this.Integrity <= 0 ||
+            this.Won ||
             this.Stars < 60
         )
             return false;
@@ -76,7 +78,22 @@ export class Battle {
         this.Towers.push({x, y, clock: 0});
         return true;
     }
-    Limit = 5000;
+    Wave = 0;
+    Cleared = 0;
+    Preparing = 8;
+    WaveTime = 0;
+    Won = false;
+    Campaign = true;
+    StartWave() {
+        if (!this.Campaign || this.Won || this.Integrity <= 0 || this.Preparing <= 0) return false;
+        this.Wave++;
+        this.WaveTime = 0;
+        this.Preparing = 0;
+        this.SpawnClock = 0;
+        this.Limit = this.Spawned + Math.round(240 * 1.48 ** (this.Wave - 1));
+        return true;
+    }
+    Limit = 0;
     Rate = 100;
     TowerEnabled = true;
     Seed = 12345;
@@ -123,8 +140,20 @@ export class Battle {
         return result;
     }
     Tick() {
-        if (this.Integrity <= 0 || (this.Spawned >= this.Limit && this.Enemies.length === 0))
+        if (this.Integrity <= 0 || this.Won) return;
+        if (this.Campaign && this.Preparing > 0) {
+            this.Preparing = Math.max(0, this.Preparing - STEP);
+            if (this.Preparing === 0) {
+                this.Preparing = STEP;
+                this.StartWave();
+            }
             return;
+        }
+        this.WaveTime += STEP;
+        if (this.Campaign)
+            this.Rate =
+                (30 + this.Wave * 12) *
+                (this.WaveTime % 12 < 4 ? 0.65 : this.WaveTime % 12 < 9 ? 1.6 : 0.35);
         this.Time += STEP;
         this.MissileCooldown = Math.max(0, this.MissileCooldown - STEP);
         if (this.Blast && (this.Blast.life -= STEP) <= 0) this.Blast = null;
@@ -229,6 +258,17 @@ export class Battle {
         for (const shot of this.Shots) shot.life -= STEP;
         this.Shots = this.Shots.filter((s) => s.life > 0);
         this.Enemies = this.Enemies.filter((e) => e.hp > 0);
+        if (
+            this.Campaign &&
+            this.Integrity > 0 &&
+            this.Spawned >= this.Limit &&
+            !this.Enemies.length
+        ) {
+            this.Cleared = this.Wave;
+            this.Stars += 40 + this.Wave * 10;
+            if (this.Wave === 8) this.Won = true;
+            else this.Preparing = 5;
+        }
         this.Grid();
     }
 }

@@ -3,6 +3,7 @@ import {blocked} from "../src/navigation.js";
 
 for (const count of [1000, 5000, 10000]) {
     const battle = new Battle();
+    battle.Campaign = false;
     battle.Rate = 0;
     battle.TowerEnabled = false;
     battle.Limit = count;

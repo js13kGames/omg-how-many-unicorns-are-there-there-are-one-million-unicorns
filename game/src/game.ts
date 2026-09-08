@@ -71,6 +71,9 @@ export class Game extends Game3D {
             button.addEventListener("click", () => this.Battle.Build(i));
             build.append(button);
         });
+        document
+            .querySelector("#start-wave")!
+            .addEventListener("click", () => this.Battle.StartWave());
         document.querySelector("#speed")!.addEventListener("click", () => {
             this.Speed = this.Speed === 1 ? 2 : 1;
             document.querySelector("#speed")!.textContent = `${this.Speed}x speed`;
@@ -125,6 +128,7 @@ export class Game extends Game3D {
             button.disabled =
                 this.Battle.Stars < 60 ||
                 this.Battle.Integrity <= 0 ||
+                this.Battle.Won ||
                 this.Battle.Towers.some((t) => t.x === x && t.y === y);
         });
         while (this.Beams.length < this.Battle.Shots.length)
@@ -146,10 +150,17 @@ export class Game extends Game3D {
             local.Scale[1] = 0.05 + shot.life * 0.4;
             local.Rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
         }
+        const startButton = document.querySelector<HTMLButtonElement>("#start-wave")!;
+        startButton.disabled =
+            this.Battle.Preparing <= 0 || this.Battle.Won || this.Battle.Integrity <= 0;
+        startButton.textContent =
+            this.Battle.Preparing > 0
+                ? `Start wave ${this.Battle.Wave + 1} · ${Math.ceil(this.Battle.Preparing)}s`
+                : `Wave ${this.Battle.Wave} / 8`;
         document.querySelector(".report strong")!.textContent =
             this.Battle.Integrity <= 0
                 ? "The fortress has been overloved."
-                : this.Battle.Spawned >= this.Battle.Limit && !this.Battle.Enemies.length
+                : this.Battle.Won
                   ? "Gate secured."
                   : "Hold the gate.";
         sys_transform2d(this, delta);

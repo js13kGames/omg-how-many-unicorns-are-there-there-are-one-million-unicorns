@@ -4,6 +4,7 @@ function check(ok: boolean, message: string) {
     if (!ok) throw new Error(message);
 }
 const b = new Battle();
+b.Campaign = false;
 b.Rate = 0;
 for (let i = 0; i < 200; i++) b.Spawn();
 b.Grid();
@@ -29,6 +30,7 @@ check(
     "Movement remains within open map",
 );
 const arrival = new Battle();
+arrival.Campaign = false;
 arrival.Rate = 0;
 arrival.TowerEnabled = false;
 arrival.Enemies.push({x: 57, y: 18, vx: 0, vy: 0, hp: 3, id: 0});
@@ -36,6 +38,7 @@ arrival.Tick();
 arrival.Tick();
 check(arrival.Integrity === 99 && arrival.Enemies.length === 0, "Arrival damages fortress once");
 const combat = new Battle();
+combat.Campaign = false;
 combat.Rate = 0;
 check(combat.Build(0), "Build on valid pad");
 check(
@@ -51,6 +54,7 @@ check(combat.Stars === 121, "Kill reward once");
 combat.Stars = 0;
 check(!combat.Build(1), "Reject unaffordable purchase");
 const blast = new Battle();
+blast.Campaign = false;
 blast.Rate = 0;
 blast.Enemies.push({x: 10, y: 10, vx: 0, vy: 0, hp: 30, id: 0});
 check(!blast.Explode(NaN, 10), "Reject invalid blast target");
