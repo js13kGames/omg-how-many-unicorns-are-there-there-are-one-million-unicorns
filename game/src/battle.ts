@@ -27,6 +27,8 @@ export class Battle {
     Spawned = 0;
     Time = 0;
     SpawnClock = 0;
+    Damage = 3;
+    FireInterval = 0.06;
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
     Stars = 180;
@@ -245,13 +247,13 @@ export class Battle {
                 );
                 if (targets.length) {
                     const e = this.Enemies[targets[0]];
-                    e.hp -= 3;
+                    e.hp -= this.Damage;
                     if (e.hp <= 0) {
                         this.Kills++;
                         this.Stars++;
                     }
                     this.Shots.push({x: e.x, y: e.y, fromX: tower.x, fromY: tower.y, life: 0.12});
-                    tower.clock = 0.06;
+                    tower.clock = this.FireInterval;
                 }
             }
         }

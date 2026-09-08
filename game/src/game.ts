@@ -1,3 +1,4 @@
+import {new_progress, parse_progress, purchase, run_reward, upgrade_cost} from "./progress.js";
 import {viewport_to_world} from "./components/com_camera2d.js";
 import {Game3D} from "../lib/game.js";
 import {create_spritesheet_from} from "../lib/texture.js";
@@ -35,6 +36,22 @@ export class Game extends Game3D {
     Actors = new Map<number, number>();
     Remainder = 0;
     Towers: number[] = [];
+    Progress = new_progress();
+    SaveBlocked = false;
+    Rewarded = false;
+    Save() {
+        if (this.SaveBlocked) return;
+        try {
+            localStorage.setItem("unicorn-flood-v1", JSON.stringify(this.Progress));
+        } catch {
+            document.querySelector("#save-status")!.textContent =
+                "Save failed. Keep this page open to retain progress.";
+        }
+    }
+    ApplyProgress() {
+        this.Battle.Damage = 3 * 1.2 ** this.Progress.damage;
+        this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
+    }
     Beams: number[] = [];
 
     constructor() {
@@ -44,6 +61,18 @@ export class Game extends Game3D {
         this.Gl.disable(GL_CULL_FACE);
         this.Gl.disable(GL_BLEND);
         setup_render2d_buffers(this.Gl, this.InstanceBuffer);
+        try {
+            this.Progress = parse_progress(localStorage.getItem("unicorn-flood-v1"));
+        } catch (error) {
+            this.SaveBlocked = true;
+            document.querySelector("#save-status")!.textContent = String(error);
+        }
+        this.ApplyProgress();
+        for (const kind of ["damage", "rate"] as const)
+            document.querySelector(`#upgrade-${kind}`)!.addEventListener("click", () => {
+                if (!this.Rewarded) return;
+                if (purchase(this.Progress, kind)) this.Save();
+            });
         document.querySelector("#pause")!.addEventListener("click", () => {
             this.Paused = !this.Paused;
             document.querySelector("#pause")!.textContent = this.Paused ? "Resume" : "Pause";
@@ -54,6 +83,8 @@ export class Game extends Game3D {
             for (const ent of this.Towers) destroy_entity(this.World, ent);
             this.Towers = [];
             this.Battle = new Battle();
+            this.ApplyProgress();
+            this.Rewarded = false;
             this.Remainder = 0;
             this.Paused = false;
             document.querySelector("#pause")!.textContent = "Pause";
@@ -88,6 +119,27 @@ export class Game extends Game3D {
             this.Time += STEP;
             this.Battle.Tick();
         }
+        const ended = this.Battle.Won || this.Battle.Integrity <= 0;
+        if (ended && !this.Rewarded) {
+            this.Rewarded = true;
+            const reward = run_reward(this.Battle.Kills, this.Battle.Cleared, this.Battle.Won);
+            this.Progress.sparkles += reward;
+            this.Progress.runs++;
+            this.Progress.best = Math.max(this.Progress.best, this.Battle.Cleared);
+            document.querySelector("#summary")!.textContent =
+                `${this.Battle.Kills} stopped · ${this.Battle.Cleared} waves cleared · ${reward} Sparkles earned`;
+            this.Save();
+        }
+        document.querySelector<HTMLElement>("#upgrades")!.hidden = !ended;
+        for (const kind of ["damage", "rate"] as const) {
+            const button = document.querySelector<HTMLButtonElement>(`#upgrade-${kind}`)!;
+            button.textContent = `${kind === "damage" ? "Damage +20%" : "Fire rate +15%"} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
+            button.disabled =
+                this.Progress.sparkles < upgrade_cost(this.Progress[kind]) ||
+                this.Progress[kind] >= 50;
+        }
+        document.querySelector("#sparkles")!.textContent =
+            `${this.Progress.sparkles} Sparkles · upgrades apply on retry`;
         const live = new Set(this.Battle.Enemies.map((e) => e.id));
         for (const [id, ent] of this.Actors)
             if (!live.has(id)) {
