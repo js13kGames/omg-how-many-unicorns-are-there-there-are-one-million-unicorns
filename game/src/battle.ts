@@ -62,6 +62,15 @@ export class Battle {
     FireInterval = 0.06;
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
+    Cannonballs: {
+        x: number;
+        y: number;
+        dx: number;
+        dy: number;
+        left: number;
+        damage: number;
+        hit: Set<number>;
+    }[] = [];
     Stars = 180;
     SpecialCooldowns: Record<string, number> = {flyby: 0, divine: 0, apocalypse: 0};
     Specials: {
@@ -432,6 +441,49 @@ export class Battle {
         this.Specials = this.Specials.filter(
             (s) => s.time < (s.kind === "divine" ? 3.6 : s.kind === "flyby" ? 1.6 : 1),
         );
+        for (const ball of this.Cannonballs) {
+            const step = Math.min(ball.left, 20 * STEP),
+                ax = ball.x,
+                ay = ball.y;
+            const segment = beam_segments(ax, ay, ball.dx, ball.dy, step, this.Map, false)[0];
+            if (!segment) {
+                ball.left = 0;
+                continue;
+            }
+            const bx = segment.bx,
+                by = segment.by,
+                dx = bx - ax,
+                dy = by - ay,
+                length = dx * dx + dy * dy;
+            const targets = this.Query((ax + bx) / 2, (ay + by) / 2, step / 2 + 0.5)
+                .filter((i) => {
+                    const e = this.Enemies[i],
+                        t = length
+                            ? Math.max(0, Math.min(1, ((e.x - ax) * dx + (e.y - ay) * dy) / length))
+                            : 0;
+                    return (
+                        !ball.hit.has(e.id) &&
+                        (e.x - ax - t * dx) ** 2 + (e.y - ay - t * dy) ** 2 < 0.25
+                    );
+                })
+                .sort(
+                    (a, b) =>
+                        (this.Enemies[a].x - this.Enemies[b].x) * ball.dx +
+                        (this.Enemies[a].y - this.Enemies[b].y) * ball.dy,
+                );
+            for (const i of targets) {
+                const e = this.Enemies[i];
+                ball.hit.add(e.id);
+                this.DamageEnemy(e, ball.damage);
+                ball.damage *= 0.85;
+            }
+            ball.x = bx;
+            ball.y = by;
+            ball.left -= step;
+            if (Math.hypot(dx, dy) < step - 0.001) ball.left = 0;
+            this.Shots.push({x: bx, y: by, fromX: ax, fromY: ay, life: 0.06});
+        }
+        this.Cannonballs = this.Cannonballs.filter((b) => b.left > 0);
         for (const mortar of this.Mortars) {
             mortar.delay -= STEP;
             if (mortar.delay <= 0) this.AreaDamage(mortar.x, mortar.y, 4, mortar.damage);
@@ -460,6 +512,19 @@ export class Battle {
                             len = Math.hypot(dx, dy) || 1,
                             ux = dx / len,
                             uy = dy / len;
+                        if (tower.kind === 4) {
+                            this.Cannonballs.push({
+                                x: tower.x,
+                                y: tower.y,
+                                dx: ux,
+                                dy: uy,
+                                left: this.Range,
+                                damage: this.Damage * 8,
+                                hit: new Set(),
+                            });
+                            tower.clock = 1.2;
+                            continue;
+                        }
                         if (tower.kind === 5) {
                             for (const segment of beam_segments(
                                 tower.x,

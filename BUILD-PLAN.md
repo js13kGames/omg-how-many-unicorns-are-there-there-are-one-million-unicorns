@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 19,795 bytes. Prism beams now stop at walls and reflect from canyon obstacles with a shared range budget and 20% damage loss per bounce. Beam geometry, tower, weapon, and map checks passed. The fixed 0.1-unit ray steps are documented as a one-unit-grid limit. The game has five layouts, seven tower types, five enemies, five abilities, Royal support, and permanent stat upgrades. Projectile travel, visible ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
+The current release is 20,151 bytes. Candy Cannon now fires moving projectiles with swept hit checks, per-projectile target tracking, damage decay, and map-specific wall collision. Tests verify that damage waits for travel and penetration decays; tower, beam, weapon, combat, and map checks passed. Prism reflection is implemented. Cupcake flight, visible ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
 
 ## Measured CPU simulation check
 

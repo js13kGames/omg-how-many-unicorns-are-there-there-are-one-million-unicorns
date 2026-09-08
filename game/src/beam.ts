@@ -7,6 +7,7 @@ export function beam_segments(
     dy: number,
     range: number,
     map: number,
+    reflect = map === 3,
 ) {
     const length = Math.hypot(dx, dy);
     if (!Number.isFinite(x + y + length + range) || length === 0 || range <= 0) return [];
@@ -25,7 +26,7 @@ export function beam_segments(
                 ny = y + dy * step;
             if (blocked(Math.floor(nx), Math.floor(ny), map)) {
                 segments.push({ax, ay, bx: x, by: y, power});
-                if (map !== 3) return segments;
+                if (!reflect) return segments;
                 const hitX = blocked(Math.floor(nx), Math.floor(y), map);
                 const hitY = blocked(Math.floor(x), Math.floor(ny), map);
                 if (hitX || !hitY) dx = -dx;
