@@ -3,7 +3,7 @@ import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
-import {Battle} from "./battle.js";
+import {Battle, PADS} from "./battle.js";
 import {sprite} from "./scenes/sce_fortress.js";
 import {destroy_entity} from "../lib/world.js";
 import {fixed_steps, meadow_field, STEP} from "./navigation.js";
@@ -33,6 +33,7 @@ export class Game extends Game3D {
     Battle = new Battle();
     Actors = new Map<number, number>();
     Remainder = 0;
+    Towers: number[] = [];
     Beams: number[] = [];
 
     constructor() {
@@ -49,10 +50,19 @@ export class Game extends Game3D {
         document.querySelector("#retry")!.addEventListener("click", () => {
             for (const ent of this.Actors.values()) destroy_entity(this.World, ent);
             this.Actors.clear();
+            for (const ent of this.Towers) destroy_entity(this.World, ent);
+            this.Towers = [];
             this.Battle = new Battle();
             this.Remainder = 0;
             this.Paused = false;
             document.querySelector("#pause")!.textContent = "Pause";
+        });
+        const build = document.querySelector("#build")!;
+        PADS.forEach((_, i) => {
+            const button = document.createElement("button");
+            button.textContent = `Pad ${i + 1} · 60 Stars`;
+            button.addEventListener("click", () => this.Battle.Build(i));
+            build.append(button);
         });
         document.querySelector("#speed")!.addEventListener("click", () => {
             this.Speed = this.Speed === 1 ? 2 : 1;
@@ -94,6 +104,18 @@ export class Game extends Game3D {
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / 100`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
+        while (this.Towers.length < this.Battle.Towers.length) {
+            const t = this.Battle.Towers[this.Towers.length];
+            this.Towers.push(sprite(this, "tower", t.x - 32, t.y - 18, 2.7, 2.7));
+        }
+        values[2].textContent = `${this.Battle.Stars} Stars`;
+        document.querySelectorAll<HTMLButtonElement>("#build button").forEach((button, i) => {
+            const [x, y] = PADS[i];
+            button.disabled =
+                this.Battle.Stars < 60 ||
+                this.Battle.Integrity <= 0 ||
+                this.Battle.Towers.some((t) => t.x === x && t.y === y);
+        });
         while (this.Beams.length < this.Battle.Shots.length)
             this.Beams.push(sprite(this, "ground", 0, 0, 1, 0.08, [1, 0.94, 0.6, 1], 0.8));
         for (let i = 0; i < this.Beams.length; i++) {
@@ -105,10 +127,10 @@ export class Game extends Game3D {
             }
             this.World.Signature[ent] |= Has.Render2D | Has.Dirty;
             const local = this.World.LocalTransform2D[ent],
-                dx = shot.x - 37,
-                dy = shot.y - 23;
-            local.Translation[0] = 5 + dx / 2;
-            local.Translation[1] = 5 + dy / 2;
+                dx = shot.x - shot.fromX,
+                dy = shot.y - shot.fromY;
+            local.Translation[0] = shot.fromX - 32 + dx / 2;
+            local.Translation[1] = shot.fromY - 18 + dy / 2;
             local.Scale[0] = Math.hypot(dx, dy);
             local.Scale[1] = 0.05 + shot.life * 0.4;
             local.Rotation = (Math.atan2(dy, dx) * 180) / Math.PI;

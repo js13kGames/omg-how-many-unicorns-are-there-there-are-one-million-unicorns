@@ -1,5 +1,13 @@
 import {blocked, MAP_WIDTH as W, MAP_HEIGHT as H, meadow_field, STEP} from "./navigation.js";
 
+export const PADS = [
+    [37, 23],
+    [37, 12],
+    [25, 24],
+    [25, 11],
+    [47, 23],
+    [47, 12],
+];
 export interface Enemy {
     x: number;
     y: number;
@@ -18,7 +26,24 @@ export class Battle {
     Time = 0;
     SpawnClock = 0;
     FireClock = 0;
-    Shots: {x: number; y: number; life: number}[] = [];
+    Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
+    Stars = 180;
+    Towers: {x: number; y: number; clock: number}[] = [];
+    Build(pad: number) {
+        if (
+            !Number.isInteger(pad) ||
+            pad < 0 ||
+            pad >= PADS.length ||
+            this.Integrity <= 0 ||
+            this.Stars < 60
+        )
+            return false;
+        const [x, y] = PADS[pad];
+        if (this.Towers.some((t) => t.x === x && t.y === y)) return false;
+        this.Stars -= 60;
+        this.Towers.push({x, y, clock: 0});
+        return true;
+    }
     Limit = 5000;
     Rate = 100;
     TowerEnabled = true;
@@ -142,18 +167,29 @@ export class Battle {
         this.Grid();
         this.FireClock -= STEP;
         if (this.TowerEnabled && this.FireClock <= 0) {
-            const targets = this.Query(37, 23, 12);
-            targets.sort(
-                (a, b) =>
-                    this.Field[Math.floor(this.Enemies[a].y) * W + Math.floor(this.Enemies[a].x)] -
-                    this.Field[Math.floor(this.Enemies[b].y) * W + Math.floor(this.Enemies[b].x)],
-            );
-            if (targets.length) {
-                const e = this.Enemies[targets[0]];
-                e.hp -= 3;
-                if (e.hp <= 0) this.Kills++;
-                this.Shots.push({x: e.x, y: e.y, life: 0.12});
-                this.FireClock = 0.06;
+            for (const tower of this.Towers) {
+                tower.clock -= STEP;
+                if (tower.clock > 0) continue;
+                const targets = this.Query(tower.x, tower.y, 12);
+                targets.sort(
+                    (a, b) =>
+                        this.Field[
+                            Math.floor(this.Enemies[a].y) * W + Math.floor(this.Enemies[a].x)
+                        ] -
+                        this.Field[
+                            Math.floor(this.Enemies[b].y) * W + Math.floor(this.Enemies[b].x)
+                        ],
+                );
+                if (targets.length) {
+                    const e = this.Enemies[targets[0]];
+                    e.hp -= 3;
+                    if (e.hp <= 0) {
+                        this.Kills++;
+                        this.Stars++;
+                    }
+                    this.Shots.push({x: e.x, y: e.y, fromX: tower.x, fromY: tower.y, life: 0.12});
+                    tower.clock = 0.06;
+                }
             }
         }
         for (const shot of this.Shots) shot.life -= STEP;

@@ -2,6 +2,7 @@ import {instantiate} from "../../lib/game.js";
 import {Vec4} from "../../lib/math.js";
 import {local_transform2d} from "../components/com_local_transform2d.js";
 import {order, render2d} from "../components/com_render2d.js";
+import {PADS} from "../battle.js";
 import {Game} from "../game.js";
 import {blueprint_camera} from "./blu_camera.js";
 
@@ -39,5 +40,6 @@ export function scene_fortress(game: Game) {
     }
     sprite(game, "stone", 28, 0, 5, 7, undefined, 0.65);
     sprite(game, "ground", 25.7, 0, 0.4, 3, [0.64, 0.85, 0.83, 1], 0.7);
-    sprite(game, "tower", 5, 5, 2.7, 2.7);
+    for (const [x, y] of PADS)
+        sprite(game, "ground", x - 32, y - 18, 2.5, 2.5, [0.4, 0.5, 0.42, 1], -0.7);
 }

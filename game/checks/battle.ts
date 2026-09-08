@@ -37,8 +37,17 @@ arrival.Tick();
 check(arrival.Integrity === 99 && arrival.Enemies.length === 0, "Arrival damages fortress once");
 const combat = new Battle();
 combat.Rate = 0;
+check(combat.Build(0), "Build on valid pad");
+check(
+    !combat.Build(0) && !combat.Build(-1) && !combat.Build(NaN),
+    "Reject duplicate and invalid pads",
+);
+check(combat.Stars === 120, "Spend exactly once");
 combat.Enemies.push({x: 38, y: 23, vx: 0, vy: 0, hp: 3, id: 0});
 combat.Tick();
 combat.Tick();
 check(combat.Kills === 1 && combat.Enemies.length === 0, "Tower kills once and removes target");
+check(combat.Stars === 121, "Kill reward once");
+combat.Stars = 0;
+check(!combat.Build(1), "Reject unaffordable purchase");
 console.log("Crowd, query, arrival, and combat checks passed.");
