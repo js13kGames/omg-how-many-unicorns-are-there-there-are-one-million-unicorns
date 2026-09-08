@@ -51,6 +51,8 @@ export class Game extends Game3D {
     ApplyProgress() {
         this.Battle.Damage = 3 * 1.2 ** this.Progress.damage;
         this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
+        this.Battle.Range = 12 + this.Progress.range;
+        this.Battle.Integrity = this.Battle.MaxIntegrity = 100 + this.Progress.fortress * 20;
     }
     FreezeStart: [number, number] | null = null;
     Debris: {entity: number; life: number; vx: number; vy: number}[] = [];
@@ -70,7 +72,7 @@ export class Game extends Game3D {
             document.querySelector("#save-status")!.textContent = String(error);
         }
         this.ApplyProgress();
-        for (const kind of ["damage", "rate"] as const)
+        for (const kind of ["damage", "rate", "range", "fortress"] as const)
             document.querySelector(`#upgrade-${kind}`)!.addEventListener("click", () => {
                 if (!this.Rewarded) return;
                 if (purchase(this.Progress, kind)) this.Save();
@@ -161,12 +163,12 @@ export class Game extends Game3D {
             this.Save();
         }
         document.querySelector<HTMLElement>("#upgrades")!.hidden = !ended;
-        for (const kind of ["damage", "rate"] as const) {
+        for (const kind of ["damage", "rate", "range", "fortress"] as const) {
             const button = document.querySelector<HTMLButtonElement>(`#upgrade-${kind}`)!;
-            button.textContent = `${kind === "damage" ? "Damage +20%" : "Fire rate +15%"} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
+            button.textContent = `${{damage: "Damage +20%", rate: "Fire rate +15%", range: "Range +1", fortress: "Integrity +20"}[kind]} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
             button.disabled =
                 this.Progress.sparkles < upgrade_cost(this.Progress[kind]) ||
-                this.Progress[kind] >= 50;
+                this.Progress[kind] >= (kind === "range" || kind === "fortress" ? 20 : 50);
         }
         document.querySelector("#sparkles")!.textContent =
             `${this.Progress.sparkles} Sparkles · upgrades apply on retry`;
@@ -235,7 +237,7 @@ export class Game extends Game3D {
                     ? "Click target: Apocalypse ready"
                     : "Click two points: ability ready";
         const values = document.querySelectorAll("#status b");
-        values[0].textContent = `${this.Battle.Integrity} / 100`;
+        values[0].textContent = `${this.Battle.Integrity} / ${this.Battle.MaxIntegrity}`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
         while (this.Towers.length < this.Battle.Towers.length) {
             const t = this.Battle.Towers[this.Towers.length];

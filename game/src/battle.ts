@@ -49,6 +49,8 @@ export class Battle {
     }
     Field = meadow_field();
     Cells: number[][] = Array.from({length: W * H}, () => []);
+    MaxIntegrity = 100;
+    Range = 12;
     Integrity = 100;
     Kills = 0;
     Spawned = 0;
@@ -425,7 +427,7 @@ export class Battle {
             for (const tower of this.Towers) {
                 tower.clock -= STEP;
                 if (tower.clock > 0) continue;
-                const targets = this.Query(tower.x, tower.y, 12);
+                const targets = this.Query(tower.x, tower.y, this.Range);
                 targets.sort(
                     (a, b) =>
                         this.Field[
@@ -480,8 +482,8 @@ export class Battle {
                             tower.clock = tower.kind === 4 ? 1.2 : 0.1;
                         }
                         this.Shots.push({
-                            x: tower.x + ux * 12,
-                            y: tower.y + uy * 12,
+                            x: tower.x + ux * this.Range,
+                            y: tower.y + uy * this.Range,
                             fromX: tower.x,
                             fromY: tower.y,
                             life: 0.12,

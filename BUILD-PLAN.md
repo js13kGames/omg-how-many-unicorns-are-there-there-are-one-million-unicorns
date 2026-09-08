@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 19,216 bytes. Five authored map layouts are selectable on retry. Navigation and visible walls use the same obstacle function. Map checks passed for reachable spawns, clear build pads, and movement boundaries. Browser switching through all five maps kept one camera and produced no WebGL errors. Seven towers, five enemies, and five abilities have initial logic. Remaining work includes Prism reflection, projectile travel, visible ability warnings, distinct art, progression tree, Royal support, audio, balance, and large-scale validation.
+The current release is 19,462 bytes. Permanent range and fortress upgrades now apply on retry. Old version-one saves gain zero levels for these fields. Validation, purchase, map, tower, wave, and combat checks passed. Browser retry with two range levels and three fortress levels produced range 14 and integrity 160/160 with no WebGL error. The game has five selectable layouts and initial logic for seven towers, five enemies, and five abilities. Remaining work includes Prism reflection, projectile travel, visible ability warnings, distinct art, mechanic upgrades and unlocks, Royal support, audio, balance, and large-scale validation.
 
 ## Measured CPU simulation check
 

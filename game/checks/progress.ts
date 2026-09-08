@@ -23,4 +23,7 @@ for (const raw of [
 }
 check(run_reward(0, 0, false) >= 10, "Short run buys an upgrade");
 check(run_reward(200, 2, false) > run_reward(100, 1, false), "Longer progress pays more");
+const legacy = parse_progress('{"version":1,"sparkles":20,"damage":0,"rate":0,"runs":0,"best":0}');
+check(legacy.range === 0 && legacy.fortress === 0, "Old saves gain default upgrade fields");
+check(purchase(legacy, "range") && purchase(legacy, "fortress"), "New upgrade purchases");
 console.log("Progress validation, purchases and rewards passed.");
