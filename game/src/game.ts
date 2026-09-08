@@ -33,6 +33,7 @@ export class Game extends Game3D {
     Battle = new Battle();
     Actors = new Map<number, number>();
     Remainder = 0;
+    Beams: number[] = [];
 
     constructor() {
         super();
@@ -44,6 +45,14 @@ export class Game extends Game3D {
         document.querySelector("#pause")!.addEventListener("click", () => {
             this.Paused = !this.Paused;
             document.querySelector("#pause")!.textContent = this.Paused ? "Resume" : "Pause";
+        });
+        document.querySelector("#retry")!.addEventListener("click", () => {
+            for (const ent of this.Actors.values()) destroy_entity(this.World, ent);
+            this.Actors.clear();
+            this.Battle = new Battle();
+            this.Remainder = 0;
+            this.Paused = false;
+            document.querySelector("#pause")!.textContent = "Pause";
         });
         document.querySelector("#speed")!.addEventListener("click", () => {
             this.Speed = this.Speed === 1 ? 2 : 1;
@@ -85,6 +94,31 @@ export class Game extends Game3D {
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / 100`;
         values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
+        while (this.Beams.length < this.Battle.Shots.length)
+            this.Beams.push(sprite(this, "ground", 0, 0, 1, 0.08, [1, 0.94, 0.6, 1], 0.8));
+        for (let i = 0; i < this.Beams.length; i++) {
+            const ent = this.Beams[i],
+                shot = this.Battle.Shots[i];
+            if (!shot) {
+                this.World.Signature[ent] &= ~Has.Render2D;
+                continue;
+            }
+            this.World.Signature[ent] |= Has.Render2D | Has.Dirty;
+            const local = this.World.LocalTransform2D[ent],
+                dx = shot.x - 37,
+                dy = shot.y - 23;
+            local.Translation[0] = 5 + dx / 2;
+            local.Translation[1] = 5 + dy / 2;
+            local.Scale[0] = Math.hypot(dx, dy);
+            local.Scale[1] = 0.05 + shot.life * 0.4;
+            local.Rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
+        }
+        document.querySelector(".report strong")!.textContent =
+            this.Battle.Integrity <= 0
+                ? "The fortress has been overloved."
+                : this.Battle.Spawned >= this.Battle.Limit && !this.Battle.Enemies.length
+                  ? "Gate secured."
+                  : "Hold the gate.";
         sys_transform2d(this, delta);
         sys_resize2d(this, delta);
         sys_camera2d(this, delta);

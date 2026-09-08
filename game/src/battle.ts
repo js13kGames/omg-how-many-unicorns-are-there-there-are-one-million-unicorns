@@ -66,7 +66,8 @@ export class Battle {
         return result;
     }
     Tick() {
-        if (this.Integrity <= 0) return;
+        if (this.Integrity <= 0 || (this.Spawned >= this.Limit && this.Enemies.length === 0))
+            return;
         this.Time += STEP;
         this.SpawnClock += STEP * this.Rate;
         while (this.SpawnClock >= 1 && this.Spawned < this.Limit) {
@@ -122,6 +123,11 @@ export class Battle {
                             dy += (sy / d) * (0.45 - d) * 5;
                         }
                     }
+            const density = (x: number, y: number) =>
+                blocked(x, y) ? this.Cells[cell].length : this.Cells[y * W + x].length;
+            dx += Math.max(-1, Math.min(1, (density(cx - 1, cy) - density(cx + 1, cy)) * 0.08));
+            dy += Math.max(-1, Math.min(1, (density(cx, cy - 1) - density(cx, cy + 1)) * 0.08));
+            dy += Math.sin(e.id * 2.4 + this.Time * 0.7) * 0.12;
             e.vx += (dx - e.vx) * 0.15;
             e.vy += (dy - e.vy) * 0.15;
             const nx = e.x + e.vx * STEP,

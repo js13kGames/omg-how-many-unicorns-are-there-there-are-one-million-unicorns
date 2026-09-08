@@ -53,6 +53,13 @@ function render_all(game: Game, eye: Camera2D) {
     let sheet = game.Spritesheet;
 
     game.Gl.useProgram(material.Program);
+    const shot = game.Battle.Shots[game.Battle.Shots.length - 1];
+    game.Gl.uniform3f(
+        material.Locations.Flash,
+        shot ? shot.x - 32 : 0,
+        shot ? shot.y - 18 : 0,
+        shot ? shot.life * 8 : 0,
+    );
     game.Gl.uniformMatrix3x2fv(material.Locations.Pv, false, eye.Pv);
 
     game.Gl.activeTexture(GL_TEXTURE0);

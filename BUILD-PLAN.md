@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-B01–B03 are complete. B04–B05 now have an initial crowd and combat implementation. The release page is 12,494 bytes. Runnable checks passed for local queries against a brute-force reference, open-cell movement, single fortress damage, and single tower kill. A browser simulation reached 24.13 seconds with 2,069 live enemies and 243 kills before fortress loss; WebGL reported no error. This is a simulation result, not a frame-rate benchmark. Crowd pressure, better flow smoothing, shot effects, and player controls still need work. The full game is not complete.
+B01–B03 are complete. B04–B05 now include density pressure, stable movement noise, visible instanced shots, hit lighting, and retry. The release page is 13,044 bytes. Type checks and crowd/combat checks passed. Browser checks confirmed a kill, visible beam slots, a non-zero light uniform, and no WebGL error. Flow quality and scale still need tests. The full game is not complete.
 
 ## Updated visual and scale target
 

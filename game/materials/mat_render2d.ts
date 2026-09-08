@@ -25,6 +25,7 @@ function vertex(has_render2d: number, has_spatial_node2d: number) {
     out vec2 vert_texcoord;
     out vec4 vert_color;
     out vec4 vert_sprite;
+    out vec2 vert_world;
 
     void main() {
         int signature = int(attr_translation.w);
@@ -47,6 +48,7 @@ function vertex(has_render2d: number, has_spatial_node2d: number) {
             }
 
             vec3 world_position = mat3(world) * vec3(attr_position, 1);
+            vert_world = world_position.xy;
             vec3 clip_position = mat3(pv) * world_position;
             gl_Position = vec4(clip_position.xy, -attr_translation.z, 1);
 
@@ -64,6 +66,8 @@ let fragment = `#version 300 es\n
     precision mediump float;
 
     uniform sampler2D sheet_texture;
+    uniform vec3 flash;
+    in vec2 vert_world;
 
     in vec2 vert_texcoord;
     in vec4 vert_color;
@@ -72,6 +76,7 @@ let fragment = `#version 300 es\n
 
     void main() {
         frag_color = vert_color * texture(sheet_texture, vert_texcoord);
+        frag_color.rgb += vec3(1.0, 0.72, 0.3) * flash.z * exp(-distance(vert_world, flash.xy) * 0.5);
         if (frag_color.a < 0.5) {
             discard;
         }
@@ -91,6 +96,7 @@ export function mat_render2d(
             Pv: gl.getUniformLocation(program, "pv")!,
             World: gl.getUniformLocation(program, "world")!,
             SheetTexture: gl.getUniformLocation(program, "sheet_texture")!,
+            Flash: gl.getUniformLocation(program, "flash")!,
             SheetSize: gl.getUniformLocation(program, "sheet_size")!,
         },
     };
