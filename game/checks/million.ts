@@ -23,9 +23,9 @@ check(
     "Missile emits streak and impact rays",
 );
 const tower = new Crowd();
-tower.Population[18 * MAP_WIDTH + 24] = 10_000;
+tower.Population[18 * MAP_WIDTH + 20] = 10_000;
 tower.Count = tower.Spawned = 10_000;
-check(tower.Build(25, 18) && !tower.Build(25, 18), "Builds one tower per pad");
+check(tower.Build(22, 10) && !tower.Build(22, 10), "Builds one tower per wall cell");
 tower.FireTowers(0.05);
 check(tower.Count === 9_750 && tower.Kills === 250, "Tower destroys population");
 check(tower.Effects.length === 1 && tower.Effects[0].kind === "laser", "Tower emits laser");

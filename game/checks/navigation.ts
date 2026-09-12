@@ -11,7 +11,10 @@ check(split[0] === -1 && split[1] === -1, "Unreachable cells and walls");
 const corner = flow_field(2, 2, Uint8Array.from([0, 1, 1, 0]), 3);
 check(corner[0] === -1, "No diagonal corner cutting");
 const meadow = meadow_field();
-check(meadow[18 * MAP_WIDTH + 4] > 0 && blocked(31, 4) && !blocked(31, 18), "Meadow choke");
+check(
+    meadow[18 * MAP_WIDTH + 4] > 0 && blocked(12, 10) && !blocked(12, 30),
+    "Alternating maze wall and gap",
+);
 function ticks(speed: number, frames: number) {
     let remainder = 0,
         count = 0;

@@ -10,20 +10,16 @@ export const MAP_NAMES = [
     "Last Fortress",
 ];
 export function blocked(x: number, y: number, map = 0) {
-    return (
-        x < 0 ||
-        x >= MAP_WIDTH ||
-        y < 0 ||
-        y >= MAP_HEIGHT ||
-        (x >= 30 &&
-            x < 34 &&
-            (map === 2
-                ? y >= 8 && y < 28
-                : y < (map === 1 ? 16 : 14) || y >= (map === 1 ? 20 : 22))) ||
-        (map === 3 && x >= 16 && x < 20 && y >= 10 && y < 26) ||
-        (map === 4 &&
-            ((x >= 14 && x < 18 && y > 9 && y < 27) || (x >= 44 && x < 46 && (y < 14 || y >= 22))))
-    );
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) return true;
+    for (const [wall, gapStart] of [
+        [12, 27],
+        [22, 2],
+        [32, 27],
+        [42, 2],
+        [52, 15],
+    ])
+        if (x >= wall && x < wall + 2 && (y < gapStart || y >= gapStart + 7)) return true;
+    return false;
 }
 
 export function flow_field(

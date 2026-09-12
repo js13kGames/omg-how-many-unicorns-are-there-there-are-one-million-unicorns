@@ -19,7 +19,7 @@ import {
 import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_crowd} from "../materials/mat_crowd.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
-import {Battle, PADS} from "./battle.js";
+import {Battle} from "./battle.js";
 import {Crowd, CROWD_LIMIT} from "./crowd.js";
 import {meadow_field} from "./navigation.js";
 import {sprite, scene_fortress} from "./scenes/sce_fortress.js";
@@ -56,6 +56,8 @@ export class Game extends Game3D {
     RenderCount = 0;
     Stars = 360;
     MissileCooldown = 0;
+    Building = false;
+    Message = "Click the battlefield to fire Magic Missile.";
 
     constructor() {
         super();
@@ -95,33 +97,38 @@ export class Game extends Game3D {
             document.querySelector("#speed")!.textContent = `${this.Speed}x speed`;
         });
         this.Ui.addEventListener("click", (event) => {
-            if (
-                event.target !== this.Ui ||
-                this.Paused ||
-                this.MissileCooldown > 0 ||
-                this.Cameras.length === 0
-            )
-                return;
+            if (event.target !== this.Ui || this.Paused || this.Cameras.length === 0) return;
             const point: [number, number] = [event.clientX, event.clientY];
             viewport_to_world(point, this.World.Camera2D[this.Cameras[0]], point);
             const x = point[0] + 32,
                 y = point[1] + 18;
+            if (this.Building) {
+                const cellX = Math.floor(x),
+                    cellY = Math.floor(y);
+                if (this.Stars < TOWER_COST) this.Message = "Not enough Stars for a tower.";
+                else if (this.Crowd.Build(cellX, cellY)) {
+                    this.Stars -= TOWER_COST;
+                    sprite(this, "tower", cellX - 31.5, cellY - 17.5, 0.9, 0.9);
+                    this.Building = false;
+                    this.Message = "Tower built. Click the battlefield to fire Magic Missile.";
+                } else this.Message = "Build on an empty maze wall cell, not on the path.";
+                return;
+            }
+            if (this.MissileCooldown > 0) return;
             if (this.Crowd.Explode(x, y) > 0) {
                 this.MissileCooldown = 2;
                 this.Battle.Blast = {x, y, life: 0.5};
             }
         });
-        const build = document.querySelector("#build")!;
-        PADS.forEach(([x, y], i) => {
-            const button = document.createElement("button");
-            button.addEventListener("click", () => {
-                if (this.Stars < TOWER_COST || !this.Crowd.Build(x, y)) return;
-                this.Stars -= TOWER_COST;
-                sprite(this, "tower", x - 32, y - 18, 2.7, 2.7);
-                this.World.Signature[this.World.Signature.length - 1] |= Has.Dirty;
-            });
-            button.dataset.pad = String(i);
-            build.append(button);
+        document.querySelector("#build-tower")!.addEventListener("click", () => {
+            if (this.Stars < TOWER_COST) {
+                this.Message = "Not enough Stars for a tower.";
+                return;
+            }
+            this.Building = !this.Building;
+            this.Message = this.Building
+                ? "Build mode: click an empty maze wall cell."
+                : "Click the battlefield to fire Magic Missile.";
         });
     }
 
@@ -132,6 +139,8 @@ export class Game extends Game3D {
         this.EffectEntities = [];
         this.Stars = 360;
         this.MissileCooldown = this.Time = 0;
+        this.Building = false;
+        this.Message = "Click the battlefield to fire Magic Missile.";
         this.Paused = false;
         this.Battle.Blast = null;
         scene_fortress(this);
@@ -173,19 +182,16 @@ export class Game extends Game3D {
         start.textContent = this.Crowd.Running
             ? `${this.Crowd.Spawned.toLocaleString()} / ${CROWD_LIMIT.toLocaleString()} deployed`
             : `Start ${CROWD_LIMIT.toLocaleString()} unicorn attack`;
-        document.querySelector("#summary")!.textContent =
-            this.MissileCooldown > 0
-                ? `Magic Missile recharging: ${this.MissileCooldown.toFixed(1)}s`
-                : "Click the battlefield to fire Magic Missile.";
-        document.querySelectorAll<HTMLButtonElement>("#build button").forEach((button, i) => {
-            button.textContent = `Build tower ${i + 1} · ${TOWER_COST} Stars`;
-            button.disabled =
-                this.Stars < TOWER_COST ||
-                this.Crowd.Towers.some((tower) => {
-                    const [x, y] = PADS[i];
-                    return tower.x === x && tower.y === y;
-                });
-        });
+        document.querySelector("#summary")!.textContent = this.Building
+            ? this.Message
+            : this.MissileCooldown > 0
+              ? `Magic Missile recharging: ${this.MissileCooldown.toFixed(1)}s`
+              : this.Message;
+        const build = document.querySelector<HTMLButtonElement>("#build-tower")!;
+        build.textContent = this.Building
+            ? "Cancel tower placement"
+            : `Build tower · ${TOWER_COST} Stars`;
+        build.disabled = this.Stars < TOWER_COST;
         while (this.EffectEntities.length < this.Crowd.Effects.length)
             this.EffectEntities.push(sprite(this, "ground", 0, 0, 1, 1, [1, 1, 1, 1], 0.9));
         for (let i = 0; i < this.EffectEntities.length; i++) {

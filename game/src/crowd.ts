@@ -58,8 +58,18 @@ export class Crowd {
     }
 
     Build(x: number, y: number) {
-        if (this.Towers.some((tower) => tower.x === x && tower.y === y)) return false;
-        this.Towers.push({x, y, clock: 0});
+        if (
+            !Number.isInteger(x) ||
+            !Number.isInteger(y) ||
+            x < 0 ||
+            x >= 56 ||
+            y < 0 ||
+            y >= MAP_HEIGHT ||
+            !blocked(x, y) ||
+            this.Towers.some((tower) => Math.floor(tower.x) === x && Math.floor(tower.y) === y)
+        )
+            return false;
+        this.Towers.push({x: x + 0.5, y: y + 0.5, clock: 0});
         return true;
     }
 
