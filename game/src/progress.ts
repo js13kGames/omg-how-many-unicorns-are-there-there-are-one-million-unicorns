@@ -7,21 +7,34 @@ export interface Progress {
     best: number;
     range: number;
     fortress: number;
+    chain: number;
 }
 export function new_progress(): Progress {
-    return {version: 1, sparkles: 0, damage: 0, rate: 0, runs: 0, best: 0, range: 0, fortress: 0};
+    return {
+        version: 1,
+        sparkles: 0,
+        damage: 0,
+        rate: 0,
+        runs: 0,
+        best: 0,
+        range: 0,
+        fortress: 0,
+        chain: 0,
+    };
 }
 export function parse_progress(raw: string | null): Progress {
     if (raw === null) return new_progress();
     const value = JSON.parse(raw);
     if (!value || value.version !== 1)
         throw new Error("Save version is not supported. The saved data was not changed.");
+    value.chain ??= 0;
     value.range ??= 0;
     value.fortress ??= 0;
-    for (const key of ["sparkles", "damage", "rate", "runs", "best", "range", "fortress"])
+    for (const key of ["sparkles", "damage", "rate", "runs", "best", "range", "fortress", "chain"])
         if (!Number.isSafeInteger(value[key]) || value[key] < 0)
             throw new Error("Save data is not valid. The saved data was not changed.");
     if (
+        value.chain > 20 ||
         value.damage > 50 ||
         value.rate > 50 ||
         value.range > 20 ||
@@ -34,10 +47,13 @@ export function parse_progress(raw: string | null): Progress {
 export function upgrade_cost(level: number) {
     return Math.ceil(10 * 1.35 ** level);
 }
-export function purchase(progress: Progress, kind: "damage" | "rate" | "range" | "fortress") {
+export function purchase(
+    progress: Progress,
+    kind: "damage" | "rate" | "range" | "fortress" | "chain",
+) {
     const cost = upgrade_cost(progress[kind]);
     if (
-        progress[kind] >= (kind === "range" || kind === "fortress" ? 20 : 50) ||
+        progress[kind] >= (kind === "range" || kind === "fortress" || kind === "chain" ? 20 : 50) ||
         progress.sparkles < cost
     )
         return false;

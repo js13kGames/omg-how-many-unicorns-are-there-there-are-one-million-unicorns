@@ -59,6 +59,7 @@ export class Battle {
     Time = 0;
     SpawnClock = 0;
     Damage = 3;
+    ChainCount = 10;
     FireInterval = 0.06;
     FireClock = 0;
     Shots: {x: number; y: number; life: number; fromX: number; fromY: number}[] = [];
@@ -652,7 +653,7 @@ export class Battle {
                         if (tower.kind === 2) {
                             const hit = new Set<number>([targets[0]]);
                             let previous = e;
-                            for (let jump = 0; jump < 10; jump++) {
+                            for (let jump = 0; jump < this.ChainCount; jump++) {
                                 let next = -1,
                                     nearest = 9;
                                 for (const i of this.Query(previous.x, previous.y, 3)) {

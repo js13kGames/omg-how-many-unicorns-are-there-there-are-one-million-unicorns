@@ -52,6 +52,7 @@ export class Game extends Game3D {
         this.Battle.Damage = 3 * 1.2 ** this.Progress.damage;
         this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
         this.Battle.Range = 12 + this.Progress.range;
+        this.Battle.ChainCount = 10 + this.Progress.chain * 2;
         this.Battle.Integrity = this.Battle.MaxIntegrity = 100 + this.Progress.fortress * 20;
     }
     FreezeStart: [number, number] | null = null;
@@ -72,7 +73,7 @@ export class Game extends Game3D {
             document.querySelector("#save-status")!.textContent = String(error);
         }
         this.ApplyProgress();
-        for (const kind of ["damage", "rate", "range", "fortress"] as const)
+        for (const kind of ["damage", "rate", "range", "fortress", "chain"] as const)
             document.querySelector(`#upgrade-${kind}`)!.addEventListener("click", () => {
                 if (!this.Rewarded) return;
                 if (purchase(this.Progress, kind)) this.Save();
@@ -163,12 +164,13 @@ export class Game extends Game3D {
             this.Save();
         }
         document.querySelector<HTMLElement>("#upgrades")!.hidden = !ended;
-        for (const kind of ["damage", "rate", "range", "fortress"] as const) {
+        for (const kind of ["damage", "rate", "range", "fortress", "chain"] as const) {
             const button = document.querySelector<HTMLButtonElement>(`#upgrade-${kind}`)!;
-            button.textContent = `${{damage: "Damage +20%", rate: "Fire rate +15%", range: "Range +1", fortress: "Integrity +20"}[kind]} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
+            button.textContent = `${{damage: "Damage +20%", rate: "Fire rate +15%", range: "Range +1", fortress: "Integrity +20", chain: "Chain jumps +2"}[kind]} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
             button.disabled =
                 this.Progress.sparkles < upgrade_cost(this.Progress[kind]) ||
-                this.Progress[kind] >= (kind === "range" || kind === "fortress" ? 20 : 50);
+                this.Progress[kind] >=
+                    (kind === "range" || kind === "fortress" || kind === "chain" ? 20 : 50);
         }
         document.querySelector("#sparkles")!.textContent =
             `${this.Progress.sparkles} Sparkles · upgrades apply on retry`;
