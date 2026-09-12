@@ -122,8 +122,9 @@ export class Crowd {
                 this.Next[cell] += count - escaped;
                 continue;
             }
-            let best = cell,
-                distance = this.Field[cell];
+            const distance = this.Field[cell],
+                candidates = [-1, -1, -1, -1];
+            let candidateCount = 0;
             for (const next of [cell + 1, cell - 1, cell + MAP_WIDTH, cell - MAP_WIDTH])
                 if (
                     next >= 0 &&
@@ -133,17 +134,20 @@ export class Crowd {
                         1 &&
                     this.Field[next] >= 0 &&
                     this.Field[next] < distance
-                ) {
-                    best = next;
-                    distance = this.Field[next];
-                }
-            const moved = best === cell ? 0 : Math.max(1, Math.floor(count * 0.14));
+                )
+                    candidates[candidateCount++] = next;
+            const moved = candidateCount && count >= 64 ? Math.floor(count * 0.2) : 0;
             this.Next[cell] += count - moved;
-            this.Next[best] += moved;
+            for (let i = 0, remaining = moved; i < candidateCount; i++) {
+                const share = Math.floor(remaining / (candidateCount - i));
+                this.Next[candidates[i]] += share;
+                remaining -= share;
+            }
         }
         const swap = this.Population;
         this.Population = this.Next;
         this.Next = swap;
+        this.Relax();
         if (arrived) {
             this.Arrived += arrived;
             this.Count -= arrived;
@@ -153,6 +157,36 @@ export class Crowd {
             }
         }
         this.Dirty = true;
+    }
+
+    Relax() {
+        this.Next.set(this.Population);
+        for (let cell = 0; cell < CROWD_CELLS; cell++) {
+            if (this.Field[cell] < 0 || !this.Population[cell]) continue;
+            const x = cell % MAP_WIDTH;
+            for (const next of [cell + 1, cell + MAP_WIDTH]) {
+                if (
+                    next >= CROWD_CELLS ||
+                    (next === cell + 1 && x === MAP_WIDTH - 1) ||
+                    this.Field[next] < 0
+                )
+                    continue;
+                const difference = this.Population[cell] - this.Population[next];
+                if (Math.abs(difference) < 32) continue;
+                const source = difference > 0 ? cell : next,
+                    target = difference > 0 ? next : cell,
+                    transfer = Math.min(
+                        Math.floor(Math.abs(difference) * 0.3),
+                        Math.floor(this.Population[source] / 4),
+                    );
+                if (transfer < 8) continue;
+                this.Next[source] -= transfer;
+                this.Next[target] += transfer;
+            }
+        }
+        const swap = this.Population;
+        this.Population = this.Next;
+        this.Next = swap;
     }
 
     FireTowers(delta: number) {

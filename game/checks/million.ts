@@ -12,6 +12,15 @@ check(crowd.Spawned === CROWD_RATE && crowd.Count === CROWD_RATE, "Spawns exact 
 for (let i = 0; i < 40; i++) crowd.Tick(0.05);
 check(crowd.Spawned === crowd.Count + crowd.Kills + crowd.Arrived, "Population is conserved");
 check(crowd.WallCount() === 0, "Population never enters walls");
+const occupiedRows = new Set<number>();
+const occupiedColumns = new Set<number>();
+for (let cell = 0; cell < crowd.Population.length; cell++)
+    if (crowd.Population[cell] >= 10) {
+        occupiedRows.add(Math.floor(cell / MAP_WIDTH));
+        occupiedColumns.add(cell % MAP_WIDTH);
+    }
+check(occupiedRows.size >= 24, "Crowd fills the corridor height");
+check(occupiedColumns.size >= 8, "Crowd forms a broad front instead of a line");
 check(
     crowd.UpdatePrefix() && crowd.Prefix.at(-1) === crowd.Count,
     "Prefix stores exact live count",
