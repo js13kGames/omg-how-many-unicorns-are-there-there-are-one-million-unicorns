@@ -30,7 +30,7 @@ import {
     UPGRADE_KINDS,
     upgrade_cost,
 } from "./progress.js";
-import {meadow_field} from "./navigation.js";
+import {blocked, meadow_field} from "./navigation.js";
 import {sprite, scene_fortress} from "./scenes/sce_fortress.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
 import {sys_control_camera} from "./systems/sys_control_camera.js";
@@ -208,6 +208,8 @@ export class Game extends Game3D {
         this.Save();
         document.querySelector("#result-title")!.textContent =
             this.Crowd.Result > 0 ? "The gate holds!" : "The unicorns escaped!";
+        const result = document.querySelector<HTMLElement>("#result")!;
+        result.className = this.Crowd.Result > 0 ? "win" : "loss";
         document.querySelector("#result-copy")!.textContent =
             `${this.Crowd.Kills.toLocaleString()} destroyed · ${this.Crowd.Arrived.toLocaleString()} escaped · +${this.Reward} upgrade Stars`;
         document.querySelector<HTMLElement>("#result")!.hidden = false;
@@ -230,6 +232,7 @@ export class Game extends Game3D {
         scene_fortress(this);
         this.ViewportResized = true;
         document.querySelector<HTMLElement>("#result")!.hidden = true;
+        document.body.classList.remove("building");
         document.querySelector("#pause")!.textContent = "Pause";
     }
 
@@ -262,6 +265,11 @@ export class Game extends Game3D {
         values[0].textContent = `${Math.max(0, ESCAPE_LIMIT - this.Crowd.Arrived).toLocaleString()} may still escape`;
         values[1].textContent = `${this.Crowd.Kills.toLocaleString()} / ${KILL_TARGET.toLocaleString()} destroyed`;
         values[2].textContent = `${this.Stars} build Stars · ${this.Progress.stars} upgrade Stars`;
+        document.querySelector<HTMLElement>("#escape-fill")!.style.width =
+            `${(this.Crowd.Arrived / ESCAPE_LIMIT) * 100}%`;
+        document.querySelector<HTMLElement>("#kill-fill")!.style.width =
+            `${(this.Crowd.Kills / KILL_TARGET) * 100}%`;
+        document.body.classList.toggle("building", this.Building);
         const start = document.querySelector<HTMLButtonElement>("#start-wave")!;
         start.disabled = this.Crowd.Running || this.Crowd.Result !== 0;
         start.textContent = this.Crowd.Running
@@ -277,6 +285,32 @@ export class Game extends Game3D {
             ? "Cancel tower placement"
             : `Build tower · ${TOWER_COST} Stars`;
         build.disabled = this.Stars < TOWER_COST || this.Crowd.Result !== 0;
+        const preview = document.querySelector<HTMLElement>("#build-preview")!;
+        preview.hidden = !this.Building || this.Cameras.length === 0;
+        if (!preview.hidden) {
+            const camera = this.World.Camera2D[this.Cameras[0]],
+                point: [number, number] = [this.InputState.MouseX, this.InputState.MouseY];
+            viewport_to_world(point, camera, point);
+            const cellX = Math.floor(point[0] + 32),
+                cellY = Math.floor(point[1] + 18),
+                worldX = cellX - 31.5,
+                worldY = cellY - 17.5,
+                matrix = camera.Pv;
+            preview.style.left = `${((matrix[0] * worldX + matrix[2] * worldY + matrix[4] + 1) * camera.ViewportWidth) / 2}px`;
+            preview.style.top = `${((1 - (matrix[1] * worldX + matrix[3] * worldY + matrix[5])) * camera.ViewportHeight) / 2}px`;
+            preview.style.width = preview.style.height = `${this.UnitSize}px`;
+            preview.classList.toggle(
+                "valid",
+                cellX >= 0 &&
+                    cellX < 56 &&
+                    cellY >= 0 &&
+                    cellY < 36 &&
+                    blocked(cellX, cellY) &&
+                    !this.Crowd.Towers.some(
+                        (tower) => Math.floor(tower.x) === cellX && Math.floor(tower.y) === cellY,
+                    ),
+            );
+        }
         while (this.EffectEntities.length < this.Crowd.Effects.length)
             this.EffectEntities.push(sprite(this, "ground", 0, 0, 1, 1, [1, 1, 1, 1], 0.9));
         for (let i = 0; i < this.EffectEntities.length; i++) {

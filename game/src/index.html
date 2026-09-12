@@ -9,10 +9,11 @@
 <canvas id="background"></canvas><canvas id="scene" aria-label="Fortress battlefield"></canvas><canvas id="foreground"></canvas>
 <main>
 <header><div><small>FORTRESS COMMAND / MEADOW GATE</small><h1>UNICORN FLOOD</h1></div><div class="report"><small>FLUID CROWD TEST</small><strong>Build towers. Fire missiles. Hold the gate.</strong></div></header>
-<section id="status" aria-live="polite"><span>INTEGRITY <b>1,000,000 / 1,000,000</b></span><span>CONTACTS <b>0 live · 0 destroyed</b></span><span>RESOURCES <b>360 Stars · 0 breached</b></span></section>
+<section id="status" aria-live="polite"><span>ESCAPE LIMIT <b>10,000 may still escape</b><i><em id="escape-fill"></em></i></span><span>VICTORY TARGET <b>0 / 990,000 destroyed</b><i><em id="kill-fill"></em></i></span><span>RESOURCES <b>360 build Stars · 0 upgrade Stars</b></span></section>
 <section id="build"><button id="build-tower" type="button">Build tower · 60 Stars</button></section>
 <p id="summary" role="status">Click the battlefield to fire Magic Missile.</p>
-<section id="result" hidden><div class="rainbow"></div><h2 id="result-title"></h2><p id="result-copy"></p><p id="bank"></p><div id="upgrade-list"><button id="upgrade-damage" type="button"></button><button id="upgrade-rate" type="button"></button><button id="upgrade-range" type="button"></button><button id="upgrade-missile" type="button"></button><button id="upgrade-economy" type="button"></button></div><button id="result-retry" type="button">Retry the maze</button></section>
+<div id="build-preview" hidden></div>
+<section id="result" hidden><div class="rainbow"></div><small>RUN COMPLETE</small><h2 id="result-title"></h2><p id="result-copy"></p><p id="bank"></p><div id="upgrade-list"><button id="upgrade-damage" type="button"></button><button id="upgrade-rate" type="button"></button><button id="upgrade-range" type="button"></button><button id="upgrade-missile" type="button"></button><button id="upgrade-economy" type="button"></button></div><button id="result-retry" type="button">Apply upgrades and retry</button></section>
 <footer><span>Right-drag to pan · Scroll to zoom</span><div><button id="start-wave" type="button">Start 1,000,000 unicorn attack</button> <button id="retry" type="button">Restart test</button> <button id="pause" type="button">Pause</button> <button id="speed" type="button">1x speed</button></div><span>Fluid cells drive one million GPU unicorns</span></footer>
 </main>
 <script type="module" src="./index.js"></script>
