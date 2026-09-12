@@ -75,6 +75,9 @@ function render_crowd(game: Game, eye: Camera2D) {
     const material = game.MaterialCrowd;
     game.Gl.bindVertexArray(game.CrowdVao);
     game.Gl.useProgram(material.Program);
+    game.Gl.activeTexture(GL_TEXTURE0);
+    game.Gl.bindTexture(GL_TEXTURE_2D, game.CrowdTexture);
+    game.Gl.uniform1i(material.Locations.Prefix, 0);
     game.Gl.uniformMatrix3x2fv(material.Locations.Pv, false, eye.Pv);
     game.Gl.uniform1f(material.Locations.Time, game.Crowd.Time);
     game.Gl.uniform1f(material.Locations.PointSize, Math.min(3, game.UnitSize * 0.18));

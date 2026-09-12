@@ -5,6 +5,7 @@ interface CrowdLayout {
     Pv: WebGLUniformLocation;
     Time: WebGLUniformLocation;
     PointSize: WebGLUniformLocation;
+    Prefix: WebGLUniformLocation;
 }
 
 const vertex = `#version 300 es
@@ -13,6 +14,7 @@ precision highp int;
 uniform mat3x2 pv;
 uniform float time;
 uniform float point_size;
+uniform sampler2D prefix_texture;
 out vec3 color;
 
 float hash(uint value) {
@@ -24,19 +26,30 @@ float hash(uint value) {
     return float(value) / 4294967295.0;
 }
 
+float prefix(int cell) {
+    return texelFetch(prefix_texture, ivec2(cell % 64, cell / 64), 0).r;
+}
+
 void main() {
-    uint id = uint(gl_VertexID);
-    float phase = hash(id);
-    float travel = mod(phase * 62.0 + time * (1.8 + hash(id + 17u) * 0.7), 62.0);
-    float x = -31.0 + travel;
-    float source_y = hash(id + 101u) * 32.0 - 16.0;
-    float funnel = 1.0 - smoothstep(8.0, 27.0, x) * 0.94;
-    float y = source_y * funnel + sin(float(id % 997u) * 0.31 + time * 1.4) * 0.18;
-    vec3 world = vec3(x, y, 1.0);
-    vec3 clip = mat3(pv) * world;
+    float id = float(gl_VertexID);
+    int low = 0;
+    int high = 2303;
+    for (int step = 0; step < 12; step++) {
+        int middle = (low + high) / 2;
+        if (prefix(middle) > id) high = middle;
+        else low = middle + 1;
+    }
+    int cell = low;
+    float first = cell == 0 ? 0.0 : prefix(cell - 1);
+    uint local_id = uint(id - first);
+    float x = float(cell % 64) - 31.5 + hash(local_id * 3u + uint(cell) * 101u) * 0.94;
+    float y = float(cell / 64) - 17.5 + hash(local_id * 7u + uint(cell) * 53u) * 0.94;
+    x += sin(float(local_id % 997u) * 0.31 + time * 1.4) * 0.05;
+    y += cos(float(local_id % 991u) * 0.29 + time * 1.2) * 0.05;
+    vec3 clip = mat3(pv) * vec3(x, y, 1.0);
     gl_Position = vec4(clip.xy, y / 100.0, 1.0);
     gl_PointSize = point_size;
-    color = vec3(1.0, 0.72 + hash(id + 53u) * 0.22, 0.9);
+    color = vec3(1.0, 0.72 + hash(local_id + uint(cell)) * 0.22, 0.9);
 }`;
 
 const fragment = `#version 300 es
@@ -58,6 +71,7 @@ export function mat_crowd(gl: WebGL2RenderingContext): Material<CrowdLayout> {
             Pv: gl.getUniformLocation(program, "pv")!,
             Time: gl.getUniformLocation(program, "time")!,
             PointSize: gl.getUniformLocation(program, "point_size")!,
+            Prefix: gl.getUniformLocation(program, "prefix_texture")!,
         },
     };
 }
