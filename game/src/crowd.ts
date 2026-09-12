@@ -1,6 +1,8 @@
 import {blocked, MAP_HEIGHT, MAP_WIDTH, meadow_field} from "./navigation.js";
 
 export const CROWD_LIMIT = 1_000_000;
+export const ESCAPE_LIMIT = 10_000;
+export const KILL_TARGET = 990_000;
 export const CROWD_RATE = 50_000;
 export const CROWD_CELLS = MAP_WIDTH * MAP_HEIGHT;
 const FLOW_STEP = 1 / 20;
@@ -37,10 +39,15 @@ export class Crowd {
     Clock = 0;
     SpawnRemainder = 0;
     Running = false;
+    Result = 0;
+    TowerDamage = 250;
+    TowerInterval = 0.12;
+    TowerRange = 12;
+    MissileDamage = 20_000;
     Dirty = true;
 
     Start() {
-        if (this.Running || this.Spawned === CROWD_LIMIT) return false;
+        if (this.Result || this.Running || this.Spawned === CROWD_LIMIT) return false;
         this.Running = true;
         return true;
     }
@@ -54,6 +61,7 @@ export class Crowd {
         this.Count = this.Spawned = this.Kills = this.Arrived = this.Time = this.Clock = 0;
         this.SpawnRemainder = 0;
         this.Running = false;
+        this.Result = 0;
         this.Dirty = true;
     }
 
@@ -109,7 +117,9 @@ export class Crowd {
             const x = cell % MAP_WIDTH,
                 y = Math.floor(cell / MAP_WIDTH);
             if (x >= 56 && y >= 17 && y <= 19) {
-                arrived += count;
+                const escaped = Math.min(count, ESCAPE_LIMIT - this.Arrived);
+                arrived += escaped;
+                this.Next[cell] += count - escaped;
                 continue;
             }
             let best = cell,
@@ -137,12 +147,17 @@ export class Crowd {
         if (arrived) {
             this.Arrived += arrived;
             this.Count -= arrived;
+            if (this.Arrived >= ESCAPE_LIMIT) {
+                this.Result = -1;
+                this.Running = false;
+            }
         }
         this.Dirty = true;
     }
 
     FireTowers(delta: number) {
         for (const tower of this.Towers) {
+            if (this.Result) break;
             tower.clock -= delta;
             if (tower.clock > 0) continue;
             let target = -1,
@@ -152,24 +167,25 @@ export class Crowd {
                 const x = (cell % MAP_WIDTH) + 0.5,
                     y = Math.floor(cell / MAP_WIDTH) + 0.5,
                     distance = (x - tower.x) ** 2 + (y - tower.y) ** 2;
-                if (distance <= 144 && this.Field[cell] < best) {
+                if (distance <= this.TowerRange ** 2 && this.Field[cell] < best) {
                     target = cell;
                     best = this.Field[cell];
                 }
             }
             if (target >= 0) {
-                const removed = this.Remove(target, 250);
+                const removed = this.Remove(target, this.TowerDamage);
                 if (removed) {
                     const x = (target % MAP_WIDTH) + 0.5,
                         y = Math.floor(target / MAP_WIDTH) + 0.5;
                     this.Effect(tower.x, tower.y, x, y, 0.18, 0.14, "laser");
                 }
-                tower.clock = 0.12;
+                tower.clock = this.TowerInterval;
             }
         }
     }
 
     Explode(x: number, y: number, radius = 5) {
+        if (this.Result) return 0;
         if (!Number.isFinite(x + y) || x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT)
             return 0;
         let killed = 0;
@@ -186,7 +202,10 @@ export class Crowd {
                 const distance = Math.hypot(cx + 0.5 - x, cy + 0.5 - y);
                 if (distance > radius) continue;
                 const cell = cy * MAP_WIDTH + cx;
-                killed += this.Remove(cell, Math.ceil((1 - distance / radius) * 20_000));
+                killed += this.Remove(
+                    cell,
+                    Math.ceil((1 - distance / radius) * this.MissileDamage),
+                );
             }
         if (killed) {
             this.Effect(x - 10, y - 12, x, y, 0.35, 0.22, "missile");
@@ -210,11 +229,19 @@ export class Crowd {
     }
 
     Remove(cell: number, amount: number) {
-        const removed = Math.min(this.Population[cell], Math.max(0, Math.floor(amount)));
+        const removed = Math.min(
+            this.Population[cell],
+            KILL_TARGET - this.Kills,
+            Math.max(0, Math.floor(amount)),
+        );
         if (!removed) return 0;
         this.Population[cell] -= removed;
         this.Count -= removed;
         this.Kills += removed;
+        if (this.Kills >= KILL_TARGET) {
+            this.Result = 1;
+            this.Running = false;
+        }
         this.Dirty = true;
         return removed;
     }

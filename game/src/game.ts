@@ -20,7 +20,16 @@ import {setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_crowd} from "../materials/mat_crowd.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
 import {Battle} from "./battle.js";
-import {Crowd, CROWD_LIMIT} from "./crowd.js";
+import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET} from "./crowd.js";
+import {
+    new_progress,
+    parse_progress,
+    Progress,
+    purchase,
+    run_reward,
+    UPGRADE_KINDS,
+    upgrade_cost,
+} from "./progress.js";
 import {meadow_field} from "./navigation.js";
 import {sprite, scene_fortress} from "./scenes/sce_fortress.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
@@ -55,6 +64,9 @@ export class Game extends Game3D {
     EffectEntities: number[] = [];
     RenderCount = 0;
     Stars = 360;
+    Progress: Progress = new_progress();
+    Rewarded = false;
+    Reward = 0;
     MissileCooldown = 0;
     Building = false;
     Message = "Click the battlefield to fire Magic Missile.";
@@ -86,6 +98,15 @@ export class Game extends Game3D {
         this.Battle.Rate = 0;
         this.Battle.TowerEnabled = false;
         this.Battle.Integrity = this.Battle.MaxIntegrity = CROWD_LIMIT;
+        try {
+            this.Progress = parse_progress(
+                localStorage.getItem("unicorn-flood-v2") ||
+                    localStorage.getItem("unicorn-flood-v1"),
+            );
+        } catch (error) {
+            this.Message = String(error);
+        }
+        this.ApplyProgress();
         document.querySelector("#start-wave")!.addEventListener("click", () => this.Crowd.Start());
         document.querySelector("#retry")!.addEventListener("click", () => this.Reset());
         document.querySelector("#pause")!.addEventListener("click", () => {
@@ -121,6 +142,7 @@ export class Game extends Game3D {
             }
         });
         document.querySelector("#build-tower")!.addEventListener("click", () => {
+            if (this.Crowd.Result) return;
             if (this.Stars < TOWER_COST) {
                 this.Message = "Not enough Stars for a tower.";
                 return;
@@ -130,6 +152,66 @@ export class Game extends Game3D {
                 ? "Build mode: click an empty maze wall cell."
                 : "Click the battlefield to fire Magic Missile.";
         });
+        for (const kind of UPGRADE_KINDS)
+            document.querySelector(`#upgrade-${kind}`)!.addEventListener("click", () => {
+                if (this.Crowd.Result && purchase(this.Progress, kind)) {
+                    this.Save();
+                    this.UpdateUpgrades();
+                }
+            });
+        document.querySelector("#result-retry")!.addEventListener("click", () => this.Reset());
+    }
+
+    Save() {
+        try {
+            localStorage.setItem("unicorn-flood-v2", JSON.stringify(this.Progress));
+        } catch {
+            this.Message = "Progress could not be saved.";
+        }
+    }
+
+    ApplyProgress() {
+        this.Crowd.TowerDamage = 250 * 1.5 ** this.Progress.damage;
+        this.Crowd.TowerInterval = 0.12 / 1.2 ** this.Progress.rate;
+        this.Crowd.TowerRange = 12 + this.Progress.range * 1.5;
+        this.Crowd.MissileDamage = 20_000 * 1.5 ** this.Progress.missile;
+        this.Stars = 360 + this.Progress.economy * 60;
+    }
+
+    UpdateUpgrades() {
+        document.querySelector("#bank")!.textContent =
+            `${this.Progress.stars.toLocaleString()} upgrade Stars`;
+        for (const kind of UPGRADE_KINDS) {
+            const button = document.querySelector<HTMLButtonElement>(`#upgrade-${kind}`)!;
+            const cost = upgrade_cost(this.Progress[kind]);
+            button.textContent = `${
+                {
+                    damage: "Tower damage +50%",
+                    rate: "Tower fire rate +20%",
+                    range: "Tower range +1.5",
+                    missile: "Missile power +50%",
+                    economy: "Starting Stars +60",
+                }[kind]
+            } · ${cost} Stars · level ${this.Progress[kind]}`;
+            button.disabled = this.Progress.stars < cost || this.Progress[kind] >= 20;
+        }
+    }
+
+    EndRun() {
+        if (!this.Crowd.Result || this.Rewarded) return;
+        this.Rewarded = true;
+        this.Reward = run_reward(this.Crowd.Kills, this.Crowd.Result > 0);
+        this.Progress.stars += this.Reward;
+        this.Progress.runs++;
+        this.Progress.wins += +(this.Crowd.Result > 0);
+        this.Progress.bestKills = Math.max(this.Progress.bestKills, this.Crowd.Kills);
+        this.Save();
+        document.querySelector("#result-title")!.textContent =
+            this.Crowd.Result > 0 ? "The gate holds!" : "The unicorns escaped!";
+        document.querySelector("#result-copy")!.textContent =
+            `${this.Crowd.Kills.toLocaleString()} destroyed · ${this.Crowd.Arrived.toLocaleString()} escaped · +${this.Reward} upgrade Stars`;
+        document.querySelector<HTMLElement>("#result")!.hidden = false;
+        this.UpdateUpgrades();
     }
 
     Reset() {
@@ -137,7 +219,9 @@ export class Game extends Game3D {
         this.World = new World(WORLD_CAPACITY);
         this.Cameras = [];
         this.EffectEntities = [];
-        this.Stars = 360;
+        this.Rewarded = false;
+        this.Reward = 0;
+        this.ApplyProgress();
         this.MissileCooldown = this.Time = 0;
         this.Building = false;
         this.Message = "Click the battlefield to fire Magic Missile.";
@@ -145,6 +229,7 @@ export class Game extends Game3D {
         this.Battle.Blast = null;
         scene_fortress(this);
         this.ViewportResized = true;
+        document.querySelector<HTMLElement>("#result")!.hidden = true;
         document.querySelector("#pause")!.textContent = "Pause";
     }
 
@@ -157,6 +242,7 @@ export class Game extends Game3D {
             if (this.Battle.Blast && (this.Battle.Blast.life -= elapsed) <= 0)
                 this.Battle.Blast = null;
             this.Crowd.Tick(elapsed);
+            this.EndRun();
         }
         if (this.Crowd.UpdatePrefix()) {
             this.Gl.bindTexture(GL_TEXTURE_2D, this.CrowdTexture);
@@ -172,13 +258,12 @@ export class Game extends Game3D {
                 this.Crowd.Prefix,
             );
         }
-        const integrity = CROWD_LIMIT - this.Crowd.Arrived;
         const values = document.querySelectorAll("#status b");
-        values[0].textContent = `${integrity.toLocaleString()} / ${CROWD_LIMIT.toLocaleString()}`;
-        values[1].textContent = `${this.Crowd.Count.toLocaleString()} live · ${this.Crowd.Kills.toLocaleString()} destroyed`;
-        values[2].textContent = `${this.Stars} Stars · ${this.Crowd.Arrived.toLocaleString()} breached`;
+        values[0].textContent = `${Math.max(0, ESCAPE_LIMIT - this.Crowd.Arrived).toLocaleString()} may still escape`;
+        values[1].textContent = `${this.Crowd.Kills.toLocaleString()} / ${KILL_TARGET.toLocaleString()} destroyed`;
+        values[2].textContent = `${this.Stars} build Stars · ${this.Progress.stars} upgrade Stars`;
         const start = document.querySelector<HTMLButtonElement>("#start-wave")!;
-        start.disabled = this.Crowd.Running;
+        start.disabled = this.Crowd.Running || this.Crowd.Result !== 0;
         start.textContent = this.Crowd.Running
             ? `${this.Crowd.Spawned.toLocaleString()} / ${CROWD_LIMIT.toLocaleString()} deployed`
             : `Start ${CROWD_LIMIT.toLocaleString()} unicorn attack`;
@@ -191,7 +276,7 @@ export class Game extends Game3D {
         build.textContent = this.Building
             ? "Cancel tower placement"
             : `Build tower · ${TOWER_COST} Stars`;
-        build.disabled = this.Stars < TOWER_COST;
+        build.disabled = this.Stars < TOWER_COST || this.Crowd.Result !== 0;
         while (this.EffectEntities.length < this.Crowd.Effects.length)
             this.EffectEntities.push(sprite(this, "ground", 0, 0, 1, 1, [1, 1, 1, 1], 0.9));
         for (let i = 0; i < this.EffectEntities.length; i++) {

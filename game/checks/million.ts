@@ -1,4 +1,4 @@
-import {Crowd, CROWD_LIMIT, CROWD_RATE} from "../src/crowd.js";
+import {Crowd, CROWD_LIMIT, CROWD_RATE, ESCAPE_LIMIT, KILL_TARGET} from "../src/crowd.js";
 import {MAP_WIDTH} from "../src/navigation.js";
 
 function check(ok: boolean, message: string) {
@@ -35,6 +35,26 @@ arrival.Count = arrival.Spawned = 123;
 arrival.Flow();
 check(arrival.Arrived === 123 && arrival.Count === 0, "Fortress arrivals are removed");
 check(arrival.Spawned === arrival.Count + arrival.Kills + arrival.Arrived, "Arrival conservation");
+const loss = new Crowd();
+loss.Population[18 * MAP_WIDTH + 56] = ESCAPE_LIMIT + 500;
+loss.Count = loss.Spawned = ESCAPE_LIMIT + 500;
+loss.Running = true;
+loss.Flow();
+check(
+    loss.Result === -1 && loss.Arrived === ESCAPE_LIMIT && !loss.Running,
+    "Loss clamps at one percent escaped",
+);
+check(loss.Count === 500, "Population beyond loss threshold stays visible");
+const win = new Crowd();
+win.Population[18 * MAP_WIDTH + 20] = KILL_TARGET + 500;
+win.Count = win.Spawned = KILL_TARGET + 500;
+win.Running = true;
+win.Remove(18 * MAP_WIDTH + 20, CROWD_LIMIT);
+check(
+    win.Result === 1 && win.Kills === KILL_TARGET && !win.Running,
+    "Win clamps at 99 percent killed",
+);
+check(win.Count === 500 && win.Explode(20, 18) === 0, "Combat stops after victory");
 const full = new Crowd();
 full.Start();
 full.Tick(CROWD_LIMIT / CROWD_RATE);
