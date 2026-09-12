@@ -11,12 +11,24 @@ export interface CrowdTower {
     clock: number;
 }
 
+export interface CrowdEffect {
+    fromX: number;
+    fromY: number;
+    x: number;
+    y: number;
+    life: number;
+    duration: number;
+    width: number;
+    kind: "laser" | "missile" | "blast";
+}
+
 export class Crowd {
     Population = new Uint32Array(CROWD_CELLS);
     Next = new Uint32Array(CROWD_CELLS);
     Prefix = new Float32Array(CROWD_CELLS);
     Field = meadow_field();
     Towers: CrowdTower[] = [];
+    Effects: CrowdEffect[] = [];
     Count = 0;
     Spawned = 0;
     Kills = 0;
@@ -38,6 +50,7 @@ export class Crowd {
         this.Next.fill(0);
         this.Prefix.fill(0);
         this.Towers.length = 0;
+        this.Effects.length = 0;
         this.Count = this.Spawned = this.Kills = this.Arrived = this.Time = this.Clock = 0;
         this.SpawnRemainder = 0;
         this.Running = false;
@@ -51,7 +64,10 @@ export class Crowd {
     }
 
     Tick(delta: number) {
-        if (!this.Running || delta <= 0) return;
+        if (delta <= 0) return;
+        for (const effect of this.Effects) effect.life -= delta;
+        this.Effects = this.Effects.filter((effect) => effect.life > 0);
+        if (!this.Running) return;
         this.Time += delta;
         this.SpawnRemainder += delta * CROWD_RATE;
         const spawn = Math.min(CROWD_LIMIT - this.Spawned, Math.floor(this.SpawnRemainder));
@@ -132,7 +148,12 @@ export class Crowd {
                 }
             }
             if (target >= 0) {
-                this.Remove(target, 250);
+                const removed = this.Remove(target, 250);
+                if (removed) {
+                    const x = (target % MAP_WIDTH) + 0.5,
+                        y = Math.floor(target / MAP_WIDTH) + 0.5;
+                    this.Effect(tower.x, tower.y, x, y, 0.18, 0.14, "laser");
+                }
                 tower.clock = 0.12;
             }
         }
@@ -157,7 +178,25 @@ export class Crowd {
                 const cell = cy * MAP_WIDTH + cx;
                 killed += this.Remove(cell, Math.ceil((1 - distance / radius) * 20_000));
             }
+        if (killed) {
+            this.Effect(x - 10, y - 12, x, y, 0.35, 0.22, "missile");
+            this.Effect(x - 3, y, x + 3, y, 0.4, 0.18, "blast");
+            this.Effect(x, y - 3, x, y + 3, 0.4, 0.18, "blast");
+        }
         return killed;
+    }
+
+    Effect(
+        fromX: number,
+        fromY: number,
+        x: number,
+        y: number,
+        duration: number,
+        width: number,
+        kind: CrowdEffect["kind"],
+    ) {
+        this.Effects.push({fromX, fromY, x, y, life: duration, duration, width, kind});
+        if (this.Effects.length > 64) this.Effects.splice(0, this.Effects.length - 64);
     }
 
     Remove(cell: number, amount: number) {

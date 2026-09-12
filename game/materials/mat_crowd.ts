@@ -6,6 +6,7 @@ interface CrowdLayout {
     Time: WebGLUniformLocation;
     PointSize: WebGLUniformLocation;
     Prefix: WebGLUniformLocation;
+    Blast: WebGLUniformLocation;
 }
 
 const vertex = `#version 300 es
@@ -15,6 +16,7 @@ uniform mat3x2 pv;
 uniform float time;
 uniform float point_size;
 uniform sampler2D prefix_texture;
+uniform vec3 blast;
 out vec3 color;
 
 float hash(uint value) {
@@ -49,7 +51,8 @@ void main() {
     vec3 clip = mat3(pv) * vec3(x, y, 1.0);
     gl_Position = vec4(clip.xy, y / 100.0, 1.0);
     gl_PointSize = point_size;
-    color = vec3(1.0, 0.72 + hash(local_id + uint(cell)) * 0.22, 0.9);
+    float light = blast.z * exp(-distance(vec2(x, y), blast.xy) * 0.55);
+    color = vec3(1.0, 0.72 + hash(local_id + uint(cell)) * 0.22, 0.9) + vec3(1.0, 0.48, 0.08) * light;
 }`;
 
 const fragment = `#version 300 es
@@ -72,6 +75,7 @@ export function mat_crowd(gl: WebGL2RenderingContext): Material<CrowdLayout> {
             Time: gl.getUniformLocation(program, "time")!,
             PointSize: gl.getUniformLocation(program, "point_size")!,
             Prefix: gl.getUniformLocation(program, "prefix_texture")!,
+            Blast: gl.getUniformLocation(program, "blast")!,
         },
     };
 }

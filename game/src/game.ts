@@ -52,6 +52,7 @@ export class Game extends Game3D {
     Time = 0;
     Battle = new Battle();
     Crowd = new Crowd();
+    EffectEntities: number[] = [];
     RenderCount = 0;
     Stars = 360;
     MissileCooldown = 0;
@@ -128,6 +129,7 @@ export class Game extends Game3D {
         this.Crowd.Reset();
         this.World = new World(WORLD_CAPACITY);
         this.Cameras = [];
+        this.EffectEntities = [];
         this.Stars = 360;
         this.MissileCooldown = this.Time = 0;
         this.Paused = false;
@@ -184,6 +186,39 @@ export class Game extends Game3D {
                     return tower.x === x && tower.y === y;
                 });
         });
+        while (this.EffectEntities.length < this.Crowd.Effects.length)
+            this.EffectEntities.push(sprite(this, "ground", 0, 0, 1, 1, [1, 1, 1, 1], 0.9));
+        for (let i = 0; i < this.EffectEntities.length; i++) {
+            const entity = this.EffectEntities[i],
+                effect = this.Crowd.Effects[i];
+            if (!effect) {
+                this.World.Signature[entity] &= ~Has.Render2D;
+                continue;
+            }
+            this.World.Signature[entity] |= Has.Render2D | Has.Dirty;
+            const local = this.World.LocalTransform2D[entity],
+                progress = 1 - effect.life / effect.duration,
+                start = effect.kind === "missile" ? Math.max(0, progress - 0.25) : 0,
+                end = effect.kind === "missile" ? progress : 1,
+                fromX = effect.fromX + (effect.x - effect.fromX) * start,
+                fromY = effect.fromY + (effect.y - effect.fromY) * start,
+                x = effect.fromX + (effect.x - effect.fromX) * end,
+                y = effect.fromY + (effect.y - effect.fromY) * end,
+                dx = x - fromX,
+                dy = y - fromY;
+            local.Translation[0] = (fromX + x) / 2 - 32;
+            local.Translation[1] = (fromY + y) / 2 - 18;
+            local.Scale[0] = Math.max(0.1, Math.hypot(dx, dy));
+            local.Scale[1] = effect.width * (effect.kind === "blast" ? 1 + progress * 2 : 1);
+            local.Rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
+            this.World.Render2D[entity].Color.set(
+                effect.kind === "laser"
+                    ? [0.25, 0.95, 1, 1]
+                    : effect.kind === "missile"
+                      ? [1, 0.45, 0.08, 1]
+                      : [1, 0.9, 0.2, 1],
+            );
+        }
         this.RenderCount = this.World.Signature.length;
         sys_transform2d(this, delta);
         sys_resize2d(this, delta);

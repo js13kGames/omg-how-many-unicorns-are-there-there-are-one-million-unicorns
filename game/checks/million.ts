@@ -18,12 +18,17 @@ check(
 );
 const beforeBlast = crowd.Count;
 check(crowd.Explode(5, 18) > 0 && crowd.Count < beforeBlast, "Missile removes local population");
+check(
+    crowd.Effects.length === 3 && crowd.Effects.some((effect) => effect.kind === "missile"),
+    "Missile emits streak and impact rays",
+);
 const tower = new Crowd();
 tower.Population[18 * MAP_WIDTH + 24] = 10_000;
 tower.Count = tower.Spawned = 10_000;
 check(tower.Build(25, 18) && !tower.Build(25, 18), "Builds one tower per pad");
 tower.FireTowers(0.05);
 check(tower.Count === 9_750 && tower.Kills === 250, "Tower destroys population");
+check(tower.Effects.length === 1 && tower.Effects[0].kind === "laser", "Tower emits laser");
 const arrival = new Crowd();
 arrival.Population[18 * MAP_WIDTH + 56] = 123;
 arrival.Count = arrival.Spawned = 123;

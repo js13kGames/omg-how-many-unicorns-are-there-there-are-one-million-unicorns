@@ -78,6 +78,13 @@ function render_crowd(game: Game, eye: Camera2D) {
     game.Gl.activeTexture(GL_TEXTURE0);
     game.Gl.bindTexture(GL_TEXTURE_2D, game.CrowdTexture);
     game.Gl.uniform1i(material.Locations.Prefix, 0);
+    const blast = game.Battle.Blast;
+    game.Gl.uniform3f(
+        material.Locations.Blast,
+        blast ? blast.x - 32 : 0,
+        blast ? blast.y - 18 : 0,
+        blast ? blast.life * 6 : 0,
+    );
     game.Gl.uniformMatrix3x2fv(material.Locations.Pv, false, eye.Pv);
     game.Gl.uniform1f(material.Locations.Time, game.Crowd.Time);
     game.Gl.uniform1f(material.Locations.PointSize, Math.min(3, game.UnitSize * 0.18));
