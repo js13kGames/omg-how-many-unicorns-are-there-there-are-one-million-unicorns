@@ -7,9 +7,8 @@ if (process.argv.length !== 3) {
 }
 
 let content = fs.readFileSync(process.argv[2], "utf8")
-    .replace('type="module" src="./index.js"', 'src="game.roadroller.js"')
-    .replace('href="../play/game.css"', 'href="game.css"')
-    .replace('src="./sprites/', 'src="../src/sprites/');
+    .replace(/type=(?:"module"|'module'|module)\s+src=(?:"\.\/index\.js"|'\.\/index\.js'|\.\/index\.js)/, 'src="game.roadroller.js"')
+    .replace('href="../play/game.css"', 'href="game.css"');
 let processor = posthtml([
     require("posthtml-inline-assets")(),
     require("htmlnano")({
