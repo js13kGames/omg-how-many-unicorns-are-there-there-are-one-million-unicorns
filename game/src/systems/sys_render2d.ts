@@ -44,6 +44,7 @@ export function sys_render2d(game: Game, delta: number) {
         game.Gl.viewport(0, 0, camera.ViewportWidth, camera.ViewportHeight);
         game.Gl.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         render_all(game, camera);
+        render_crowd(game, camera);
         break;
     }
 }
@@ -68,4 +69,15 @@ function render_all(game: Game, eye: Camera2D) {
     game.Gl.uniform2f(material.Locations.SheetSize, sheet.Width, sheet.Height);
 
     game.Gl.drawArraysInstanced(material.Mode, 0, 4, game.RenderCount);
+}
+
+function render_crowd(game: Game, eye: Camera2D) {
+    const material = game.MaterialCrowd;
+    game.Gl.bindVertexArray(game.CrowdVao);
+    game.Gl.useProgram(material.Program);
+    game.Gl.uniformMatrix3x2fv(material.Locations.Pv, false, eye.Pv);
+    game.Gl.uniform1f(material.Locations.Time, game.Crowd.Time);
+    game.Gl.uniform1f(material.Locations.PointSize, Math.min(3, game.UnitSize * 0.18));
+    game.Gl.drawArrays(material.Mode, 0, Math.floor(game.Crowd.Count));
+    game.Gl.bindVertexArray(null);
 }
