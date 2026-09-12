@@ -4,7 +4,7 @@
 
 The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
 
-The current release is 20,182 bytes. Tower firing now carries fractional cooldown time and can fire more than once per simulation step. The fire-rate check measured 51 damage at the base interval and 501 at a ten-times-faster interval. Tower, weapon, combat, and wave checks passed. Cupcake delayed impact, Cannon travel, and Prism reflection are implemented. Visible projectile arcs, ability warnings, distinct art, mechanic upgrades and unlocks, audio, balance, and large-scale validation remain open.
+The current release is 18,853 bytes. It is temporarily configured as one fixed Meadow Gate scale-test level with one wave budgeted at 1,000,000 individually simulated unicorns and no persistent progression. The crowd writes directly into the existing instanced sprite buffer instead of allocating one ECS wrapper object per rendered unicorn. A live Chrome smoke test reached 195,833 simultaneous simulated and rendered unicorns at about 180 MB reported JS heap with WebGL error zero before the run was paused. This verifies the test path and measured count, not sustained frame rate or one-million-live capacity. Tower firing carries fractional cooldown time and can fire more than once per simulation step. The fire-rate check measured 51 damage at the base interval and 501 at a ten-times-faster interval. Tower, weapon, combat, wave, and million-test checks passed.
 
 ## Measured CPU simulation check
 
@@ -26,7 +26,7 @@ A separate Chrome 151 check at 1600×913 on ANGLE Metal / Apple M1 Max measured 
 
 Use `Sir, We Have an Orc Problem` as the user's visual and gameplay reference. Show a dense mass of unicorns with fluid-like motion. The player builds towers. Weapon fire must produce visible light effects on the battlefield. The spaced rows in the renderer test are temporary, not the target presentation.
 
-The user wants hundreds of thousands of unicorns. Treat 100,000 and 200,000 visible units as performance targets, not verified capacity. The current buffer holds 16,384 total entity slots. Test crowd motion at smaller counts first, then compare CPU simulation, instance upload, and pixel costs as counts rise. Do not silently replace individually simulated enemies with visual-only units. Record any proposed aggregate simulation or detail-level tradeoff before using it. Bring tower placement and weapon-light tests forward once basic crowd motion and attacks work.
+The user requested a temporary one-level experiment with a 1,000,000-unicorn wave and no progression. The browser path now uses a 1,002,048-slot instance buffer and compact direct instance writes while retaining one `Enemy` simulation record per unicorn. Chrome reached 195,833 live units with WebGL error zero before the test was paused. One-million simultaneous live performance remains unproven.
 
 The inherited build tools report dependency advisories. Review and update the affected tools before deployment; do not expose the old development server to the public network.
 

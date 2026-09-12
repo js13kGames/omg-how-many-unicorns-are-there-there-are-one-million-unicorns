@@ -34,7 +34,7 @@ export function sys_render2d(game: Game, delta: number) {
     game.Gl.bindBuffer(GL_ARRAY_BUFFER, game.InstanceBuffer);
     game.Gl.bufferData(
         GL_ARRAY_BUFFER,
-        game.World.InstanceData.subarray(0, game.World.Signature.length * FLOATS_PER_INSTANCE),
+        game.World.InstanceData.subarray(0, game.RenderCount * FLOATS_PER_INSTANCE),
         GL_STREAM_DRAW,
     );
 
@@ -67,5 +67,5 @@ function render_all(game: Game, eye: Camera2D) {
     game.Gl.uniform1i(material.Locations.SheetTexture, 0);
     game.Gl.uniform2f(material.Locations.SheetSize, sheet.Width, sheet.Height);
 
-    game.Gl.drawArraysInstanced(material.Mode, 0, 4, game.World.Signature.length);
+    game.Gl.drawArraysInstanced(material.Mode, 0, 4, game.RenderCount);
 }

@@ -1,13 +1,13 @@
-import {new_progress, parse_progress, purchase, run_reward, upgrade_cost} from "./progress.js";
 import {viewport_to_world} from "./components/com_camera2d.js";
 import {Game3D} from "../lib/game.js";
 import {create_spritesheet_from} from "../lib/texture.js";
 import {GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST} from "../lib/webgl.js";
-import {setup_render2d_buffers} from "../materials/layout2d.js";
+import {FLOATS_PER_INSTANCE, setup_render2d_buffers} from "../materials/layout2d.js";
 import {mat_render2d} from "../materials/mat_render2d.js";
-import {Battle, PADS, TOWER_COSTS} from "./battle.js";
+import {Battle, configure_test_level, PADS, TEST_UNICORNS, TOWER_COSTS} from "./battle.js";
 import {sprite, scene_fortress} from "./scenes/sce_fortress.js";
 import {destroy_entity} from "../lib/world.js";
+import {atlas} from "./sprites/atlas.js";
 import {fixed_steps, meadow_field, STEP} from "./navigation.js";
 import {sys_camera2d} from "./systems/sys_camera2d.js";
 import {sys_control_camera} from "./systems/sys_control_camera.js";
@@ -16,7 +16,7 @@ import {sys_resize2d} from "./systems/sys_resize2d.js";
 import {sys_transform2d} from "./systems/sys_transform2d.js";
 import {Has, World} from "./world.js";
 
-export const WORLD_CAPACITY = 16_384;
+export const WORLD_CAPACITY = TEST_UNICORNS + 2_048;
 export const REAL_UNIT_SIZE = Math.max(
     8,
     Math.min(window.innerWidth / 76, window.innerHeight / 48),
@@ -33,28 +33,10 @@ export class Game extends Game3D {
     Paused = false;
     Time = 0;
     Battle = new Battle();
-    Actors = new Map<number, number>();
+    RenderCount = 0;
     Remainder = 0;
     Towers: number[] = [];
-    Progress = new_progress();
-    SaveBlocked = false;
     Rewarded = false;
-    Save() {
-        if (this.SaveBlocked) return;
-        try {
-            localStorage.setItem("unicorn-flood-v1", JSON.stringify(this.Progress));
-        } catch {
-            document.querySelector("#save-status")!.textContent =
-                "Save failed. Keep this page open to retain progress.";
-        }
-    }
-    ApplyProgress() {
-        this.Battle.Damage = 3 * 1.2 ** this.Progress.damage;
-        this.Battle.FireInterval = 0.06 / 1.15 ** this.Progress.rate;
-        this.Battle.Range = 12 + this.Progress.range;
-        this.Battle.ChainCount = 10 + this.Progress.chain * 2;
-        this.Battle.Integrity = this.Battle.MaxIntegrity = 100 + this.Progress.fortress * 20;
-    }
     FreezeStart: [number, number] | null = null;
     Debris: {entity: number; life: number; vx: number; vy: number}[] = [];
     Beams: number[] = [];
@@ -66,35 +48,23 @@ export class Game extends Game3D {
         this.Gl.disable(GL_CULL_FACE);
         this.Gl.disable(GL_BLEND);
         setup_render2d_buffers(this.Gl, this.InstanceBuffer);
-        try {
-            this.Progress = parse_progress(localStorage.getItem("unicorn-flood-v1"));
-        } catch (error) {
-            this.SaveBlocked = true;
-            document.querySelector("#save-status")!.textContent = String(error);
-        }
-        this.ApplyProgress();
-        for (const kind of ["damage", "rate", "range", "fortress", "chain"] as const)
-            document.querySelector(`#upgrade-${kind}`)!.addEventListener("click", () => {
-                if (!this.Rewarded) return;
-                if (purchase(this.Progress, kind)) this.Save();
-            });
+        configure_test_level(this.Battle);
         document.querySelector("#pause")!.addEventListener("click", () => {
             this.Paused = !this.Paused;
             document.querySelector("#pause")!.textContent = this.Paused ? "Resume" : "Pause";
         });
         document.querySelector("#retry")!.addEventListener("click", () => {
             this.World = new World(WORLD_CAPACITY);
-            this.Actors.clear();
+            this.RenderCount = 0;
             this.Towers = [];
             this.Beams = [];
             this.Debris = [];
             this.Cameras = [];
             this.FreezeStart = null;
             this.Battle = new Battle();
-            this.Battle.SetMap(Number(document.querySelector<HTMLSelectElement>("#map")!.value));
+            configure_test_level(this.Battle);
             scene_fortress(this);
             this.ViewportResized = true;
-            this.ApplyProgress();
             this.Rewarded = false;
             this.Remainder = 0;
             this.Paused = false;
@@ -155,69 +125,9 @@ export class Game extends Game3D {
         const ended = this.Battle.Won || this.Battle.Integrity <= 0;
         if (ended && !this.Rewarded) {
             this.Rewarded = true;
-            const reward = run_reward(this.Battle.Kills, this.Battle.Cleared, this.Battle.Won);
-            this.Progress.sparkles += reward;
-            this.Progress.runs++;
-            this.Progress.best = Math.max(this.Progress.best, this.Battle.Cleared);
-            document.querySelector("#summary")!.textContent =
-                `${this.Battle.Kills} stopped · ${this.Battle.Cleared} waves cleared · ${reward} Sparkles earned`;
-            this.Save();
-        }
-        document.querySelector<HTMLElement>("#upgrades")!.hidden = !ended;
-        for (const kind of ["damage", "rate", "range", "fortress", "chain"] as const) {
-            const button = document.querySelector<HTMLButtonElement>(`#upgrade-${kind}`)!;
-            button.textContent = `${{damage: "Damage +20%", rate: "Fire rate +15%", range: "Range +1", fortress: "Integrity +20", chain: "Chain jumps +2"}[kind]} · ${upgrade_cost(this.Progress[kind])} Sparkles`;
-            button.disabled =
-                this.Progress.sparkles < upgrade_cost(this.Progress[kind]) ||
-                this.Progress[kind] >=
-                    (kind === "range" || kind === "fortress" || kind === "chain" ? 20 : 50);
-        }
-        document.querySelector("#sparkles")!.textContent =
-            `${this.Progress.sparkles} Sparkles · upgrades apply on retry`;
-        const live = new Set(this.Battle.Enemies.map((e) => e.id));
-        for (const [id, ent] of this.Actors)
-            if (!live.has(id)) {
-                const local = this.World.LocalTransform2D[ent];
-                if (local.Translation[0] < 24 && this.Debris.length < 256) {
-                    const angle = id * 2.399;
-                    this.Debris.push({
-                        entity: sprite(
-                            this,
-                            "ground",
-                            ...local.Translation,
-                            0.16,
-                            0.16,
-                            [1, 0.5, 0.85, 1],
-                            0.75,
-                        ),
-                        life: 0.45,
-                        vx: Math.cos(angle) * 2,
-                        vy: Math.sin(angle) * 2,
-                    });
-                }
-                destroy_entity(this.World, ent);
-                this.Actors.delete(id);
-            }
-        for (const e of this.Battle.Enemies) {
-            let ent = this.Actors.get(e.id);
-            if (ent === undefined) {
-                ent = sprite(this, "unicorn", e.x - 32, e.y - 18, 0.7, 0.7, [
-                    1,
-                    0.75 + (e.id % 4) * 0.06,
-                    0.92,
-                    1,
-                ]);
-                this.Actors.set(e.id, ent);
-            }
-            const local = this.World.LocalTransform2D[ent];
-            local.Scale[0] = local.Scale[1] = [0.7, 0.55, 1.2, 0.9, 2.4][e.kind || 0];
-            this.World.Render2D[ent].Color.set(
-                (e.frozen || 0) > 0 ? [0.4, 0.85, 1, 1] : [1, 0.75 + (e.id % 4) * 0.06, 0.92, 1],
-            );
-            local.Translation[0] = e.x - 32;
-            local.Translation[1] = e.y - 18;
-            this.World.Render2D[ent].Detail[0] = -(e.y - 18) / 100;
-            this.World.Signature[ent] |= Has.Dirty;
+            document.querySelector("#summary")!.textContent = this.Battle.Won
+                ? `${this.Battle.Kills.toLocaleString()} unicorns stopped. Test complete.`
+                : `${this.Battle.Spawned.toLocaleString()} deployed before the fortress fell.`;
         }
         document.querySelector("#missile")!.textContent =
             this.Battle.MissileCooldown > 0
@@ -240,7 +150,7 @@ export class Game extends Game3D {
                     : "Click two points: ability ready";
         const values = document.querySelectorAll("#status b");
         values[0].textContent = `${this.Battle.Integrity} / ${this.Battle.MaxIntegrity}`;
-        values[1].textContent = `${this.Battle.Enemies.length} / ${this.Battle.Kills} stopped`;
+        values[1].textContent = `${this.Battle.Enemies.length.toLocaleString()} live · ${this.Battle.Spawned.toLocaleString()} / ${TEST_UNICORNS.toLocaleString()}`;
         while (this.Towers.length < this.Battle.Towers.length) {
             const t = this.Battle.Towers[this.Towers.length];
             this.Towers.push(
@@ -308,9 +218,9 @@ export class Game extends Game3D {
         startButton.disabled =
             this.Battle.Preparing <= 0 || this.Battle.Won || this.Battle.Integrity <= 0;
         startButton.textContent =
-            this.Battle.Preparing > 0
-                ? `Start wave ${this.Battle.Wave + 1} · ${Math.ceil(this.Battle.Preparing)}s`
-                : `Wave ${this.Battle.Wave} / 8`;
+            this.Battle.Wave === 0
+                ? `Start ${TEST_UNICORNS.toLocaleString()} unicorn test`
+                : `${this.Battle.Spawned.toLocaleString()} / ${TEST_UNICORNS.toLocaleString()} deployed`;
         document.querySelector(".report strong")!.textContent =
             this.Battle.Integrity <= 0
                 ? "The fortress has been overloved."
@@ -319,9 +229,31 @@ export class Game extends Game3D {
                   : this.Battle.Towers.length === 0
                     ? "Choose a tower, then a build pad."
                     : this.Battle.Wave === 0
-                      ? "Start the wave when ready."
-                      : "Click the battlefield to use an ability.";
+                      ? "Start the million-unicorn test when ready."
+                      : "One level · no persistent progression.";
         sys_transform2d(this, delta);
+        const unicorn = atlas.unicorn;
+        let offset = this.World.Signature.length * FLOATS_PER_INSTANCE;
+        for (const e of this.Battle.Enemies) {
+            const scale = [0.7, 0.55, 1.2, 0.9, 2.4][e.kind || 0];
+            this.World.InstanceData[offset] = scale;
+            this.World.InstanceData[offset + 1] = scale;
+            this.World.InstanceData[offset + 4] = e.x - 32;
+            this.World.InstanceData[offset + 5] = e.y - 18;
+            this.World.InstanceData[offset + 6] = -(e.y - 18) / 100;
+            this.World.InstanceData[offset + 7] = Has.Render2D;
+            this.World.InstanceData[offset + 8] = (e.frozen || 0) > 0 ? 0.4 : 1;
+            this.World.InstanceData[offset + 9] =
+                (e.frozen || 0) > 0 ? 0.85 : 0.75 + (e.id % 4) * 0.06;
+            this.World.InstanceData[offset + 10] = (e.frozen || 0) > 0 ? 1 : 0.92;
+            this.World.InstanceData[offset + 11] = 1;
+            this.World.InstanceData[offset + 12] = unicorn.x;
+            this.World.InstanceData[offset + 13] = unicorn.y;
+            this.World.InstanceData[offset + 14] = unicorn.w;
+            this.World.InstanceData[offset + 15] = unicorn.h;
+            offset += FLOATS_PER_INSTANCE;
+        }
+        this.RenderCount = this.World.Signature.length + this.Battle.Enemies.length;
         sys_resize2d(this, delta);
         sys_camera2d(this, delta);
         sys_render2d(this, delta);

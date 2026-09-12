@@ -1,6 +1,17 @@
 import {beam_segments} from "./beam.js";
 import {blocked, MAP_WIDTH as W, MAP_HEIGHT as H, meadow_field, STEP} from "./navigation.js";
 
+export const TEST_UNICORNS = 1_000_000;
+export const TEST_SPAWN_RATE = 50_000;
+
+export function configure_test_level(battle: Battle) {
+    battle.WaveCount = 1;
+    battle.WaveSize = TEST_UNICORNS;
+    battle.WaveRate = TEST_SPAWN_RATE;
+    battle.Stars = 1_000;
+    battle.Integrity = battle.MaxIntegrity = TEST_UNICORNS;
+}
+
 export const TOWER_COSTS = [60, 100, 90, 80, 120, 140, 100];
 export const TOWER_NAMES = [
     "Star Blaster",
@@ -203,6 +214,9 @@ export class Battle {
         return true;
     }
     Wave = 0;
+    WaveCount = 8;
+    WaveSize = 0;
+    WaveRate = 0;
     Cleared = 0;
     Preparing = 8;
     WaveTime = 0;
@@ -214,7 +228,7 @@ export class Battle {
         this.WaveTime = 0;
         this.Preparing = 0;
         this.SpawnClock = 0;
-        this.Limit = this.Spawned + Math.round(240 * 1.48 ** (this.Wave - 1));
+        this.Limit = this.Spawned + (this.WaveSize || Math.round(240 * 1.48 ** (this.Wave - 1)));
         return true;
     }
     Limit = 0;
@@ -291,8 +305,9 @@ export class Battle {
         this.WaveTime += STEP;
         if (this.Campaign)
             this.Rate =
+                this.WaveRate ||
                 (30 + this.Wave * 12) *
-                (this.WaveTime % 12 < 4 ? 0.65 : this.WaveTime % 12 < 9 ? 1.6 : 0.35);
+                    (this.WaveTime % 12 < 4 ? 0.65 : this.WaveTime % 12 < 9 ? 1.6 : 0.35);
         this.Time += STEP;
         for (const key in this.SpecialCooldowns)
             this.SpecialCooldowns[key] = Math.max(0, this.SpecialCooldowns[key] - STEP);
@@ -707,7 +722,7 @@ export class Battle {
         ) {
             this.Cleared = this.Wave;
             this.Stars += 40 + this.Wave * 10;
-            if (this.Wave === 8) this.Won = true;
+            if (this.Wave === this.WaveCount) this.Won = true;
             else this.Preparing = 5;
         }
         this.Grid();
