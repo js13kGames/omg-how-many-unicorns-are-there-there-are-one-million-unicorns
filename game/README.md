@@ -1,8 +1,8 @@
 # Unicorn Flood
 
-This game uses the Goodluck `Platformer2D` source template. The source was created with Goodluck's `bootstrap.sh` in a separate copy. The upstream license is in `LICENSE`.
+A single-stage tower defense game with one million GPU-rendered unicorns and an exact integer fluid simulation.
 
-## Local build
+## Play locally
 
 Run these commands from `game/`:
 
@@ -12,16 +12,18 @@ npm --prefix play ci
 npm start
 ```
 
-The development page is at `http://localhost:1234/src/`.
+Open `http://localhost:1234/src/`.
 
-## Checks and release
+## Check and build
 
 ```sh
 npm run ts:check
+for check in million maps navigation progress; do
+  npx esbuild checks/$check.ts --bundle --platform=node --outfile=/tmp/$check.cjs
+  node /tmp/$check.cjs
+done
 make -C play
 wc -c play/index.html
 ```
 
-The release page is `play/index.html`. It contains the code, styles, and sprite atlas. Use its byte count in each commit message.
-
-See `../BUILD-PLAN.md` for task status and resume steps.
+`play/index.html` is the complete texture-free release. Keep it below 13,312 bytes.

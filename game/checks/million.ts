@@ -37,6 +37,7 @@ tower.Count = tower.Spawned = 10_000;
 check(tower.Build(22, 10) && !tower.Build(22, 10), "Builds one tower per wall cell");
 tower.FireTowers(0.05);
 check(tower.Count === 9_750 && tower.Kills === 250, "Tower destroys population");
+check(tower.Towers[0].clock === 2, "Default tower interval is two seconds");
 check(tower.Effects.length === 1 && tower.Effects[0].kind === "laser", "Tower emits laser");
 const arrival = new Crowd();
 arrival.Population[18 * MAP_WIDTH + 56] = 123;
@@ -54,6 +55,15 @@ check(
     "Loss clamps at one percent escaped",
 );
 check(loss.Count === 500, "Population beyond loss threshold stays visible");
+const multiGate = new Crowd();
+for (const y of [17, 18, 19]) multiGate.Population[y * MAP_WIDTH + 56] = 4_000;
+multiGate.Count = multiGate.Spawned = 12_000;
+multiGate.Running = true;
+multiGate.Flow();
+check(
+    multiGate.Arrived === ESCAPE_LIMIT && multiGate.Count === 2_000,
+    "Simultaneous gate arrivals clamp to one percent",
+);
 const win = new Crowd();
 win.Population[18 * MAP_WIDTH + 20] = KILL_TARGET + 500;
 win.Count = win.Spawned = KILL_TARGET + 500;

@@ -41,7 +41,7 @@ export class Crowd {
     Running = false;
     Result = 0;
     TowerDamage = 250;
-    TowerInterval = 0.12;
+    TowerInterval = 2;
     TowerRange = 12;
     MissileDamage = 20_000;
     Dirty = true;
@@ -117,7 +117,7 @@ export class Crowd {
             const x = cell % MAP_WIDTH,
                 y = Math.floor(cell / MAP_WIDTH);
             if (x >= 56 && y >= 17 && y <= 19) {
-                const escaped = Math.min(count, ESCAPE_LIMIT - this.Arrived);
+                const escaped = Math.min(count, ESCAPE_LIMIT - this.Arrived - arrived);
                 arrived += escaped;
                 this.Next[cell] += count - escaped;
                 continue;

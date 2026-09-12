@@ -1,4 +1,11 @@
-import {new_progress, parse_progress, purchase, run_reward, upgrade_cost} from "../src/progress.js";
+import {
+    new_progress,
+    parse_progress,
+    purchase,
+    run_reward,
+    tower_interval,
+    upgrade_cost,
+} from "../src/progress.js";
 
 function check(ok: boolean, message: string) {
     if (!ok) throw new Error(message);
@@ -33,6 +40,8 @@ for (const raw of [
     }
     check(rejected, "Reject unsafe save");
 }
+check(tower_interval(0) === 2, "Default tower interval is two seconds");
+check(Math.abs(tower_interval(1) - 1.96) < 1e-9, "Rate upgrade reduces interval by two percent");
 check(run_reward(0, false) === 20, "Every run earns upgrade Stars");
 check(run_reward(990_000, true) > run_reward(500_000, false), "Kills and victory increase reward");
 console.log("Single-stage progress migration, purchases, costs, and rewards passed.");

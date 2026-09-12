@@ -35,7 +35,7 @@ game.terser.js: game.sed.js terser_compress.txt | node_modules
 game.roadroller.js: game.terser.js | node_modules
 	npx --quiet roadroller $(ROADROLLER_FLAGS) --dirty $< -o $@
 
-index.html: ../$(EXAMPLE)/index.html ../$(EXAMPLE)/sprites/unicorn.svg game.roadroller.js game.css posthtml.cjs | node_modules
+index.html: ../$(EXAMPLE)/index.html game.roadroller.js game.css posthtml.cjs | node_modules
 	node posthtml.cjs ../$(EXAMPLE)/index.html > $@
 
 # https://www.7-zip.org/download.html

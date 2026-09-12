@@ -52,6 +52,10 @@ export function parse_progress(raw: string | null): Progress {
     return value;
 }
 
+export function tower_interval(level: number) {
+    return 2 * 0.98 ** level;
+}
+
 export function upgrade_cost(level: number) {
     return 25 * 2 ** level;
 }
