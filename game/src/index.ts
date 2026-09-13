@@ -2,6 +2,7 @@ import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET, TOWER_COSTS, TOWER_NAMES}
 import {blocked, MAP_HEIGHT, MAP_WIDTH} from "./navigation.js";
 import {
     missile_cooldown,
+    missile_damage,
     new_progress,
     parse_progress,
     purchase,
@@ -55,7 +56,9 @@ const crowd = new Crowd();
 let progress = new_progress();
 try {
     progress = parse_progress(
-        localStorage.getItem("unicorn-flood-v2") || localStorage.getItem("unicorn-flood-v1"),
+        localStorage.getItem("unicorn-flood-v3") ||
+            localStorage.getItem("unicorn-flood-v2") ||
+            localStorage.getItem("unicorn-flood-v1"),
     );
 } catch {}
 let stars = 360;
@@ -83,13 +86,13 @@ function apply() {
     crowd.TowerDamage = 250 * 1.5 ** progress.damage;
     crowd.TowerInterval = tower_interval(progress.rate);
     crowd.TowerRange = 1.5 + progress.range * 1.5;
-    crowd.MissileDamage = 20_000;
+    crowd.MissileDamage = missile_damage(progress.missile);
     missileDelay = missile_cooldown(progress.missile);
     stars = 360 + progress.economy * 60;
 }
 function save() {
     try {
-        localStorage.setItem("unicorn-flood-v2", JSON.stringify(progress));
+        localStorage.setItem("unicorn-flood-v3", JSON.stringify(progress));
     } catch {}
 }
 function resize() {
@@ -160,6 +163,7 @@ for (const kind of UPGRADE_KINDS)
     document.querySelector(`#u-${kind}`)!.addEventListener("click", () => {
         if (purchase(progress, kind)) {
             save();
+            applyUnlocks();
             upgrades();
         }
     });
@@ -167,16 +171,24 @@ function upgrades() {
     document.querySelector("#bank")!.textContent = `${progress.stars} RAINBOWS`;
     const names = {
         damage: "DAMAGE +50%",
-        rate: "INTERVAL -2%",
+        rate: "FIRE RATE +11%",
         range: "RANGE +1.5",
-        missile: "COOLDOWN -10%",
+        missile: "MISSILE +40% / -10%",
         economy: "START +60",
+        arsenal: "UNLOCK NEXT TOWER",
     };
     for (const kind of UPGRADE_KINDS) {
         const button = document.querySelector<HTMLButtonElement>(`#u-${kind}`)!;
-        const cost = upgrade_cost(progress[kind]);
+        const cost = upgrade_cost(progress[kind], kind);
         button.textContent = `${names[kind]} · LEVEL ${progress[kind]} · ${cost}`;
-        button.disabled = progress.stars < cost;
+        button.disabled = progress.stars < cost || progress[kind] >= (kind === "arsenal" ? 3 : 20);
+    }
+}
+function applyUnlocks() {
+    for (let i = 1; i < 4; i++) towerSelect.options[i].disabled = i > progress.arsenal;
+    if (towerKind > progress.arsenal) {
+        towerSelect.selectedIndex = towerKind = progress.arsenal;
+        towerSelect.onchange!(new Event("change"));
     }
 }
 function end() {
@@ -329,6 +341,7 @@ function frame(now: number) {
     requestAnimationFrame(frame);
 }
 apply();
+applyUnlocks();
 resize();
 window.onresize = resize;
 requestAnimationFrame(frame);
