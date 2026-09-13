@@ -75,10 +75,28 @@ let scale = 1;
 let ox = 0;
 let oy = 0;
 let hover = [-1, -1];
+let audio: AudioContext;
+let muted = false;
+let heard: object | undefined;
+function sound(frequency: number, duration = 0.08) {
+    if (muted) return;
+    audio ||= new AudioContext();
+    const oscillator = audio.createOscillator(),
+        gain = audio.createGain(),
+        now = audio.currentTime;
+    oscillator.frequency.value = frequency;
+    oscillator.type = frequency < 100 ? "sawtooth" : "square";
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    oscillator.connect(gain).connect(audio.destination);
+    oscillator.start();
+    oscillator.stop(now + duration);
+}
 const start = document.querySelector<HTMLButtonElement>("#start")!;
 const build = document.querySelector<HTMLButtonElement>("#build")!;
 const towerSelect = document.querySelector<HTMLSelectElement>("#tower")!;
 const speedButton = document.querySelector<HTMLButtonElement>("#speed")!;
+const muteButton = document.querySelector<HTMLButtonElement>("#mute")!;
 const result = document.querySelector<HTMLElement>("#result")!;
 const intro = document.querySelector<HTMLElement>("#intro")!;
 
@@ -136,14 +154,19 @@ fx.onpointerdown = (event) => {
     const [x, y] = point(event);
     if (building) {
         const cost = TOWER_COSTS[towerKind];
-        if (stars >= cost && crowd.Build(x, y, towerKind)) stars -= cost;
+        if (stars >= cost && crowd.Build(x, y, towerKind)) {
+            stars -= cost;
+            sound([700, 130, 380, 900][towerKind]);
+        }
     } else if (!crowd.Result && missile <= 0 && crowd.Explode(x + 0.5, y + 0.5)) {
         missile = missileDelay;
         blast = [x + 0.5, y + 0.5, 1];
+        sound(70, 0.35);
     }
 };
 start.onclick = () => {
     intro.hidden = true;
+    sound(220, 0.2);
     crowd.Start();
 };
 build.onclick = () => {
@@ -157,6 +180,11 @@ towerSelect.onchange = () => {
 speedButton.onclick = () => {
     speed = speed === 1 ? 2 : 1;
     speedButton.ariaPressed = String(speed === 2);
+};
+muteButton.onclick = () => {
+    muted = !muted;
+    muteButton.textContent = muted ? "SOUND OFF" : "SOUND ON";
+    muteButton.ariaPressed = String(muted);
 };
 document.querySelector("#retry")!.addEventListener("click", reset);
 for (const kind of UPGRADE_KINDS)
@@ -206,6 +234,7 @@ function end() {
     document.querySelector("#score")!.textContent =
         `${crowd.Kills.toLocaleString()} KILLED · ${crowd.Arrived.toLocaleString()} ESCAPED · +${reward} RAINBOWS`;
     result.hidden = false;
+    sound(won ? 880 : 65, 0.5);
     upgrades();
 }
 function reset() {
@@ -309,10 +338,24 @@ function frame(now: number) {
     const delta = Math.min(0.1, (now - last) / 1000) * speed;
     last = now;
     crowd.Tick(delta);
+    const effect = crowd.Effects.at(-1);
+    if (effect && effect !== heard) {
+        heard = effect;
+        sound(
+            effect.kind === "coil"
+                ? 500
+                : effect.kind === "prism"
+                  ? 800
+                  : effect.kind === "blast"
+                    ? 110
+                    : 650,
+        );
+    }
     const nextEarned = Math.floor(crowd.Kills / 5_000);
     if (nextEarned > earned) earned = nextEarned;
     if (crowd.Arrived > escaped) {
         escaped = crowd.Arrived;
+        sound(55, 0.25);
         document.body.classList.remove("shake");
         void document.body.offsetWidth;
         document.body.classList.add("shake");
