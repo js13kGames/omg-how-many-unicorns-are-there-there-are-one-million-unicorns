@@ -65,6 +65,7 @@ let rewarded = false;
 let missile = 0;
 let missileDelay = 40;
 let earned = 0;
+let escaped = 0;
 let blast: [number, number, number] = [0, 0, 0];
 let scale = 1;
 let ox = 0;
@@ -79,7 +80,7 @@ const intro = document.querySelector<HTMLElement>("#intro")!;
 function apply() {
     crowd.TowerDamage = 250 * 1.5 ** progress.damage;
     crowd.TowerInterval = tower_interval(progress.rate);
-    crowd.TowerRange = 12 + progress.range * 1.5;
+    crowd.TowerRange = 1.5 + progress.range * 1.5;
     crowd.MissileDamage = 20_000;
     missileDelay = missile_cooldown(progress.missile);
     stars = 360 + progress.economy * 60;
@@ -167,7 +168,7 @@ function upgrades() {
     for (const kind of UPGRADE_KINDS) {
         const button = document.querySelector<HTMLButtonElement>(`#u-${kind}`)!;
         const cost = upgrade_cost(progress[kind]);
-        button.textContent = `${names[kind]} · ${cost}`;
+        button.textContent = `${names[kind]} · LEVEL ${progress[kind]} · ${cost}`;
         button.disabled = progress.stars < cost;
     }
 }
@@ -181,9 +182,6 @@ function end() {
     progress.wins += +won;
     progress.bestKills = Math.max(progress.bestKills, crowd.Kills);
     earned = reward;
-    document.body.classList.remove("shake");
-    void document.body.offsetWidth;
-    document.body.classList.add("shake");
     save();
     document.querySelector("#title")!.textContent = won ? "YOU WIN" : "YOU LOSE";
     document.querySelector("#score")!.textContent =
@@ -199,6 +197,7 @@ function reset() {
     building = false;
     build.ariaPressed = "false";
     earned = 0;
+    escaped = 0;
     document.body.classList.remove("shake");
     result.hidden = true;
     intro.hidden = false;
@@ -249,6 +248,7 @@ function hud() {
     document.querySelector("#stars")!.textContent = String(stars);
     document.querySelector("#missile")!.textContent = missile ? `${Math.ceil(missile)}s` : "READY";
     document.querySelector("#earned")!.textContent = String(earned);
+    document.querySelector("#total")!.textContent = String(progress.stars);
     document.querySelector<HTMLElement>("#mf")!.style.width =
         `${((missileDelay - missile) / missileDelay) * 100}%`;
     document.querySelector<HTMLElement>("#ef")!.style.width =
@@ -266,8 +266,9 @@ function frame(now: number) {
     last = now;
     crowd.Tick(delta);
     const nextEarned = Math.floor(crowd.Kills / 5_000);
-    if (nextEarned > earned) {
-        earned = nextEarned;
+    if (nextEarned > earned) earned = nextEarned;
+    if (crowd.Arrived > escaped) {
+        escaped = crowd.Arrived;
         document.body.classList.remove("shake");
         void document.body.offsetWidth;
         document.body.classList.add("shake");

@@ -42,7 +42,7 @@ export class Crowd {
     Result = 0;
     TowerDamage = 250;
     TowerInterval = 2;
-    TowerRange = 12;
+    TowerRange = 1.5;
     MissileDamage = 20_000;
     Dirty = true;
 
@@ -147,7 +147,7 @@ export class Crowd {
         const swap = this.Population;
         this.Population = this.Next;
         this.Next = swap;
-        this.Relax();
+        for (let pass = 0; pass < 3; pass++) this.Relax();
         if (arrived) {
             this.Arrived += arrived;
             this.Count -= arrived;
