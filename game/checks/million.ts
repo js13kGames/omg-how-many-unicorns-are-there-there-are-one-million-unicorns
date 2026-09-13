@@ -31,6 +31,19 @@ check(
     crowd.Effects.length === 3 && crowd.Effects.some((effect) => effect.kind === "missile"),
     "Missile emits streak and impact rays",
 );
+const diffusion = new Crowd();
+const center = 18 * MAP_WIDTH + 20;
+const neighbours = [center - 1, center + 1, center - MAP_WIDTH, center + MAP_WIDTH];
+diffusion.Population[center] = diffusion.Count = diffusion.Spawned = 10_000;
+diffusion.Relax();
+check(
+    neighbours.every((cell) => diffusion.Population[center] > diffusion.Population[cell]),
+    "Density relaxation does not swap into a checkerboard",
+);
+check(
+    diffusion.Population.reduce((sum, count) => sum + count, 0) === 10_000,
+    "Density relaxation conserves population",
+);
 const tower = new Crowd();
 tower.Population[10 * MAP_WIDTH + 21] = 10_000;
 tower.Count = tower.Spawned = 10_000;

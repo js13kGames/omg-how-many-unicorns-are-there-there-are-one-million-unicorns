@@ -175,10 +175,7 @@ export class Crowd {
                 if (Math.abs(difference) < 32) continue;
                 const source = difference > 0 ? cell : next,
                     target = difference > 0 ? next : cell,
-                    transfer = Math.min(
-                        Math.floor(Math.abs(difference) * 0.3),
-                        Math.floor(this.Population[source] / 4),
-                    );
+                    transfer = Math.floor(Math.abs(difference) * 0.15);
                 if (transfer < 8) continue;
                 this.Next[source] -= transfer;
                 this.Next[target] += transfer;
