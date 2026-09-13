@@ -6,6 +6,7 @@ import {
     KILL_TARGET,
     TOWER_COSTS,
     TOWER_NAMES,
+    TOWER_UNLOCKS,
 } from "./crowd.js";
 import {blocked, MAP_HEIGHT, MAP_WIDTH} from "./navigation.js";
 import {
@@ -232,9 +233,10 @@ function upgrades() {
     }
 }
 function applyUnlocks() {
-    for (let i = 1; i < 4; i++) towerSelect.options[i].disabled = i > progress.arsenal;
-    if (towerKind > progress.arsenal) {
-        towerSelect.selectedIndex = towerKind = progress.arsenal;
+    for (let i = 1; i < 4; i++)
+        towerSelect.options[i].disabled = TOWER_UNLOCKS.indexOf(i) > progress.arsenal;
+    if (towerSelect.options[towerKind].disabled) {
+        towerSelect.selectedIndex = towerKind = 0;
         towerSelect.onchange!(new Event("change"));
     }
 }

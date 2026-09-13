@@ -115,7 +115,7 @@ None of these items prevents Prototype Zero. Final values need play tests.
 | Performance | Aim for 60 FPS at 1x with 5,000 enemies on a recorded desktop test device. Record browser, GPU, viewport, pixel ratio, frame-time percentiles, and simulation time. Confirm the release target after the first tests. |
 | Prototype Zero | One map, one horde, Star Blaster, and fortress damage. No meta screen. Test an explosion and knockback before the content stage. |
 | First playable version | One stage, one aggregate one-million-unicorn crowd, four tower roles, Magic Missile, permanent progression, generated audio, pause, 2x speed, retry, and the 99% objective. |
-| Initial unlocks | Start with Blaster. The Arsenal progression branch unlocks Mortar, Coil, and Prism in that order. |
+| Initial unlocks | Start with Blaster. The Arsenal progression branch unlocks Coil, Prism, and Mortar in that order. |
 | Map and values | Author one fixed map with build pads, open ground, a choke, and a fortress. Costs, ranges, fire rates, health, speeds, wave budgets, and cooldowns still need data tables and tuning. |
 | Armor | Use flat reduction first, as in section 92 and the Crystal enemy role. Section 93 offers a different percentage model. Do not apply both. Revisit before adding Crystal enemies. |
 | Continuous damage | Apply damage per second using elapsed simulation time. Do not apply a minimum of 1 damage on every frame; that would make damage depend on update rate. |

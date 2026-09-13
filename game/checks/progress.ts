@@ -58,9 +58,9 @@ check(missile_damage(0) === 20_000 && missile_damage(1) === 28_000, "Missile upg
 check(upgrade_cost(0, "arsenal") === 100, "Arsenal has a higher base cost");
 const arsenal = new_progress();
 arsenal.stars = 700;
-check(purchase(arsenal, "arsenal") && arsenal.arsenal === 1, "Arsenal unlocks Mortar");
-check(purchase(arsenal, "arsenal") && arsenal.arsenal === 2, "Arsenal unlocks Coil");
-check(purchase(arsenal, "arsenal") && arsenal.arsenal === 3, "Arsenal unlocks Prism");
+check(purchase(arsenal, "arsenal") && arsenal.arsenal === 1, "Arsenal unlocks Coil");
+check(purchase(arsenal, "arsenal") && arsenal.arsenal === 2, "Arsenal unlocks Prism");
+check(purchase(arsenal, "arsenal") && arsenal.arsenal === 3, "Arsenal unlocks Mortar");
 check(!purchase(arsenal, "arsenal"), "Arsenal stops after all towers unlock");
 check(run_reward(0, false) === 20, "Every run earns Rainbows");
 check(run_reward(990_000, true) > run_reward(500_000, false), "Kills and victory increase reward");

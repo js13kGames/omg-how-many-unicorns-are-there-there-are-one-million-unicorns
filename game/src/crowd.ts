@@ -9,6 +9,7 @@ const FLOW_STEP = 1 / 20;
 
 export const TOWER_NAMES = ["BLASTER", "MORTAR", "COIL", "PRISM"];
 export const TOWER_COSTS = [60, 300, 80, 140];
+export const TOWER_UNLOCKS = [0, 2, 3, 1];
 
 export interface CrowdTower {
     x: number;
