@@ -8,7 +8,7 @@ export const CROWD_CELLS = MAP_WIDTH * MAP_HEIGHT;
 const FLOW_STEP = 1 / 20;
 
 export const TOWER_NAMES = ["BLASTER", "MORTAR", "COIL", "PRISM"];
-export const TOWER_COSTS = [60, 100, 80, 140];
+export const TOWER_COSTS = [60, 300, 80, 140];
 
 export interface CrowdTower {
     x: number;

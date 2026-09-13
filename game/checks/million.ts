@@ -5,6 +5,7 @@ import {
     ESCAPE_LIMIT,
     hit_pitch,
     KILL_TARGET,
+    TOWER_COSTS,
 } from "../src/crowd.js";
 import {MAP_WIDTH} from "../src/navigation.js";
 
@@ -12,6 +13,7 @@ function check(ok: boolean, message: string) {
     if (!ok) throw new Error(message);
 }
 
+check(TOWER_COSTS[1] >= TOWER_COSTS[0] * 5, "Mortar costs at least five Blasters");
 const crowd = new Crowd();
 check(crowd.Start() && !crowd.Start(), "Starts once");
 crowd.Tick(1);
