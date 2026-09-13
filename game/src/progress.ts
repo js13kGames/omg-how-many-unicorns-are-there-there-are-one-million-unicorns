@@ -52,6 +52,10 @@ export function parse_progress(raw: string | null): Progress {
     return value;
 }
 
+export function missile_cooldown(level: number) {
+    return 40 * 0.9 ** level;
+}
+
 export function tower_interval(level: number) {
     return 2 * 0.98 ** level;
 }

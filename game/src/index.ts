@@ -1,6 +1,7 @@
 import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET} from "./crowd.js";
 import {blocked, MAP_HEIGHT, MAP_WIDTH} from "./navigation.js";
 import {
+    missile_cooldown,
     new_progress,
     parse_progress,
     purchase,
@@ -62,6 +63,8 @@ let speed = 1;
 let building = false;
 let rewarded = false;
 let missile = 0;
+let missileDelay = 40;
+let earned = 0;
 let blast: [number, number, number] = [0, 0, 0];
 let scale = 1;
 let ox = 0;
@@ -71,12 +74,14 @@ const start = document.querySelector<HTMLButtonElement>("#start")!;
 const build = document.querySelector<HTMLButtonElement>("#build")!;
 const speedButton = document.querySelector<HTMLButtonElement>("#speed")!;
 const result = document.querySelector<HTMLElement>("#result")!;
+const intro = document.querySelector<HTMLElement>("#intro")!;
 
 function apply() {
     crowd.TowerDamage = 250 * 1.5 ** progress.damage;
     crowd.TowerInterval = tower_interval(progress.rate);
     crowd.TowerRange = 12 + progress.range * 1.5;
-    crowd.MissileDamage = 20_000 * 1.5 ** progress.missile;
+    crowd.MissileDamage = 20_000;
+    missileDelay = missile_cooldown(progress.missile);
     stars = 360 + progress.economy * 60;
 }
 function save() {
@@ -124,20 +129,23 @@ fx.onpointermove = (event) => (hover = point(event));
 fx.onpointerdown = (event) => {
     const [x, y] = point(event);
     if (building) {
-        if (stars >= 60 && crowd.Build(x, y)) {
-            stars -= 60;
-            building = false;
-        }
+        if (stars >= 60 && crowd.Build(x, y)) stars -= 60;
     } else if (!crowd.Result && missile <= 0 && crowd.Explode(x + 0.5, y + 0.5)) {
-        missile = 2;
+        missile = missileDelay;
         blast = [x + 0.5, y + 0.5, 1];
     }
 };
-start.onclick = () => crowd.Start();
-build.onclick = () => (building = !building);
+start.onclick = () => {
+    intro.hidden = true;
+    crowd.Start();
+};
+build.onclick = () => {
+    building = !building;
+    build.ariaPressed = String(building);
+};
 speedButton.onclick = () => {
     speed = speed === 1 ? 2 : 1;
-    speedButton.textContent = speed === 2 ? "1× SPEED" : "2× SPEED";
+    speedButton.ariaPressed = String(speed === 2);
 };
 document.querySelector("#retry")!.addEventListener("click", reset);
 for (const kind of UPGRADE_KINDS)
@@ -148,12 +156,12 @@ for (const kind of UPGRADE_KINDS)
         }
     });
 function upgrades() {
-    document.querySelector("#bank")!.textContent = `${progress.stars} STARS`;
+    document.querySelector("#bank")!.textContent = `${progress.stars} RAINBOWS`;
     const names = {
         damage: "DAMAGE +50%",
         rate: "INTERVAL -2%",
         range: "RANGE +1.5",
-        missile: "MISSILE +50%",
+        missile: "COOLDOWN -10%",
         economy: "START +60",
     };
     for (const kind of UPGRADE_KINDS) {
@@ -172,10 +180,14 @@ function end() {
     progress.runs++;
     progress.wins += +won;
     progress.bestKills = Math.max(progress.bestKills, crowd.Kills);
+    earned = reward;
+    document.body.classList.remove("shake");
+    void document.body.offsetWidth;
+    document.body.classList.add("shake");
     save();
     document.querySelector("#title")!.textContent = won ? "YOU WIN" : "YOU LOSE";
     document.querySelector("#score")!.textContent =
-        `${crowd.Kills.toLocaleString()} KILLED · ${crowd.Arrived.toLocaleString()} ESCAPED · +${reward}`;
+        `${crowd.Kills.toLocaleString()} KILLED · ${crowd.Arrived.toLocaleString()} ESCAPED · +${reward} RAINBOWS`;
     result.hidden = false;
     upgrades();
 }
@@ -185,7 +197,11 @@ function reset() {
     missile = 0;
     blast = [0, 0, 0];
     building = false;
+    build.ariaPressed = "false";
+    earned = 0;
+    document.body.classList.remove("shake");
     result.hidden = true;
+    intro.hidden = false;
     apply();
 }
 function overlay() {
@@ -231,19 +247,32 @@ function hud() {
     document.querySelector("#kills")!.textContent =
         `${crowd.Kills.toLocaleString()} / ${KILL_TARGET.toLocaleString()}`;
     document.querySelector("#stars")!.textContent = String(stars);
+    document.querySelector("#missile")!.textContent = missile ? `${Math.ceil(missile)}s` : "READY";
+    document.querySelector("#earned")!.textContent = String(earned);
+    document.querySelector<HTMLElement>("#mf")!.style.width =
+        `${((missileDelay - missile) / missileDelay) * 100}%`;
     document.querySelector<HTMLElement>("#ef")!.style.width =
         `${(crowd.Arrived / ESCAPE_LIMIT) * 100}%`;
     document.querySelector<HTMLElement>("#kf")!.style.width =
         `${(crowd.Kills / KILL_TARGET) * 100}%`;
     start.disabled = crowd.Running || !!crowd.Result;
-    build.disabled = stars < 60 || !!crowd.Result;
-    build.textContent = building ? "CANCEL" : "BUILD · 60";
+    build.disabled = (!!crowd.Result || stars < 60) && !building;
+    build.ariaPressed = String(building);
+    speedButton.ariaPressed = String(speed === 2);
 }
 let last = performance.now();
 function frame(now: number) {
     const delta = Math.min(0.1, (now - last) / 1000) * speed;
     last = now;
     crowd.Tick(delta);
+    const nextEarned = Math.floor(crowd.Kills / 5_000);
+    if (nextEarned > earned) {
+        earned = nextEarned;
+        document.body.classList.remove("shake");
+        void document.body.offsetWidth;
+        document.body.classList.add("shake");
+        setTimeout(() => document.body.classList.remove("shake"), 180);
+    }
     missile = Math.max(0, missile - delta);
     blast[2] = Math.max(0, blast[2] - delta * 2);
     if (crowd.UpdatePrefix()) {

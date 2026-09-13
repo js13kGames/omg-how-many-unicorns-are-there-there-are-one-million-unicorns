@@ -201,9 +201,9 @@ export class Crowd {
                 const x = (cell % MAP_WIDTH) + 0.5,
                     y = Math.floor(cell / MAP_WIDTH) + 0.5,
                     distance = (x - tower.x) ** 2 + (y - tower.y) ** 2;
-                if (distance <= this.TowerRange ** 2 && this.Field[cell] < best) {
+                if (distance <= this.TowerRange ** 2 && distance < best) {
                     target = cell;
-                    best = this.Field[cell];
+                    best = distance;
                 }
             }
             if (target >= 0) {
