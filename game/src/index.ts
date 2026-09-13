@@ -1,4 +1,12 @@
-import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET, TOWER_COSTS, TOWER_NAMES} from "./crowd.js";
+import {
+    Crowd,
+    CROWD_LIMIT,
+    ESCAPE_LIMIT,
+    hit_pitch,
+    KILL_TARGET,
+    TOWER_COSTS,
+    TOWER_NAMES,
+} from "./crowd.js";
 import {blocked, MAP_HEIGHT, MAP_WIDTH} from "./navigation.js";
 import {
     missile_cooldown,
@@ -63,6 +71,7 @@ try {
 } catch {}
 let stars = 360;
 let speed = 1;
+let paused = false;
 let towerKind = 0;
 let building = false;
 let rewarded = false;
@@ -85,8 +94,8 @@ function sound(frequency: number, duration = 0.08) {
         gain = audio.createGain(),
         now = audio.currentTime;
     oscillator.frequency.value = frequency;
-    oscillator.type = frequency < 100 ? "sawtooth" : "square";
-    gain.gain.setValueAtTime(0.04, now);
+    oscillator.type = frequency < 100 ? "sawtooth" : "sine";
+    gain.gain.setValueAtTime(0.015, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
     oscillator.connect(gain).connect(audio.destination);
     oscillator.start();
@@ -96,6 +105,7 @@ const start = document.querySelector<HTMLButtonElement>("#start")!;
 const build = document.querySelector<HTMLButtonElement>("#build")!;
 const towerSelect = document.querySelector<HTMLSelectElement>("#tower")!;
 const speedButton = document.querySelector<HTMLButtonElement>("#speed")!;
+const pauseButton = document.querySelector<HTMLButtonElement>("#pause")!;
 const muteButton = document.querySelector<HTMLButtonElement>("#mute")!;
 const result = document.querySelector<HTMLElement>("#result")!;
 const intro = document.querySelector<HTMLElement>("#intro")!;
@@ -161,6 +171,7 @@ fx.onpointerdown = (event) => {
     } else if (!crowd.Result && missile <= 0 && crowd.Explode(x + 0.5, y + 0.5)) {
         missile = missileDelay;
         blast = [x + 0.5, y + 0.5, 1];
+        heard = crowd.Effects.at(-1);
         sound(70, 0.35);
     }
 };
@@ -180,6 +191,14 @@ towerSelect.onchange = () => {
 speedButton.onclick = () => {
     speed = speed === 1 ? 2 : 1;
     speedButton.ariaPressed = String(speed === 2);
+};
+pauseButton.onclick = () => {
+    paused = !paused;
+    pauseButton.textContent = paused ? "RESUME" : "PAUSE";
+    pauseButton.ariaPressed = String(paused);
+};
+document.onkeydown = (event) => {
+    if (event.code === "Space" && !event.repeat) pauseButton.click();
 };
 muteButton.onclick = () => {
     muted = !muted;
@@ -243,6 +262,9 @@ function reset() {
     missile = 0;
     blast = [0, 0, 0];
     building = false;
+    paused = false;
+    pauseButton.textContent = "PAUSE";
+    pauseButton.ariaPressed = "false";
     build.ariaPressed = "false";
     earned = 0;
     escaped = 0;
@@ -294,6 +316,7 @@ function overlay() {
         } else front.fillRect(x - scale * 0.1, y - scale * 0.42, scale * 0.2, scale * 0.45);
     }
     front.lineCap = "round";
+    front.globalCompositeOperation = "lighter";
     for (const effect of crowd.Effects) {
         front.strokeStyle =
             effect.kind === "laser"
@@ -306,11 +329,20 @@ function overlay() {
                       ? "#d898ff"
                       : "#ff9d52";
         front.lineWidth = Math.max(2, effect.width * scale);
+        front.shadowColor = front.strokeStyle;
+        front.shadowBlur = effect.width * scale * 8;
         front.beginPath();
         front.moveTo(ox + effect.fromX * scale, oy + effect.fromY * scale);
         front.lineTo(ox + effect.x * scale, oy + effect.y * scale);
         front.stroke();
+        if (effect.kind === "blast") {
+            front.beginPath();
+            front.arc(ox + effect.x * scale, oy + effect.y * scale, effect.width * scale * 3, 0, 7);
+            front.stroke();
+        }
     }
+    front.shadowBlur = 0;
+    front.globalCompositeOperation = "source-over";
 }
 function hud() {
     document.querySelector("#escape")!.textContent = String(
@@ -335,21 +367,13 @@ function hud() {
 }
 let last = performance.now();
 function frame(now: number) {
-    const delta = Math.min(0.1, (now - last) / 1000) * speed;
+    const delta = paused ? 0 : Math.min(0.1, (now - last) / 1000) * speed;
     last = now;
     crowd.Tick(delta);
     const effect = crowd.Effects.at(-1);
     if (effect && effect !== heard) {
         heard = effect;
-        sound(
-            effect.kind === "coil"
-                ? 500
-                : effect.kind === "prism"
-                  ? 800
-                  : effect.kind === "blast"
-                    ? 110
-                    : 650,
-        );
+        sound(hit_pitch(effect));
     }
     const nextEarned = Math.floor(crowd.Kills / 5_000);
     if (nextEarned > earned) earned = nextEarned;

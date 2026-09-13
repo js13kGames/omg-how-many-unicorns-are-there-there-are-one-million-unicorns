@@ -28,6 +28,10 @@ export interface CrowdEffect {
     kind: "laser" | "missile" | "blast" | "coil" | "prism";
 }
 
+export function hit_pitch(effect: CrowdEffect) {
+    return 180 + Math.min(720, Math.hypot(effect.x - effect.fromX, effect.y - effect.fromY) * 55);
+}
+
 export class Crowd {
     Population = new Uint32Array(CROWD_CELLS);
     Next = new Uint32Array(CROWD_CELLS);

@@ -2,9 +2,9 @@
 
 ## Status
 
-The source review is complete. There is enough data to build Prototype Zero and the first playable version. There is not yet enough test data to promise the final crowd size, frame rate, or game balance.
+The compact release is complete. It keeps one stage, one aggregate one-million-unicorn crowd, and the objective to destroy 99% before 1% escapes. The release target is a self-contained HTML file below 13,312 bytes.
 
-The current release is a texture-free, single-stage fluid tower defense game packaged as one 9,446-byte self-contained HTML file. The runtime closure is four TypeScript modules: `index.ts`, `crowd.ts`, `navigation.ts`, and `progress.ts`. Direct WebGL renders up to 1,000,000 unicorn points. Two small 2D canvases draw the maze, fortress, geometric towers, lasers, missile effects, and build preview. Towers fire every 2 seconds by default; each rate upgrade multiplies that interval by 0.98. The intro card contains the only Start button. The bottom bar contains escape, kill, build Star, missile cooldown, and Rainbows-earned values. Build and 2x Speed controls sit inside the stage, keep fixed labels, and use pressed styling. The old textures, sprite atlas, ECS, weapons, maps, 3D assets, examples, and reference generator were removed. Focused checks cover fluid conservation and distribution, exact 1% loss and 99% win thresholds, simultaneous gate arrivals, maze collision and placement, nearest-cell tower targeting, two-second tower timing, rate scaling, 40-second missile cooldown and scaling, save migration, rewards, and upgrades.
+The current release is a texture-free, single-stage fluid tower defense game packaged as one 11,370-byte self-contained HTML file. Direct WebGL renders up to 1,000,000 unicorn points from exact aggregate cell populations. Blaster, Mortar, Coil, and Prism provide focus, area, chain, and line attacks. Magic Missile clears a selected area. Six permanent progression branches improve damage, fire rate, range, missile power and cooldown, starting Stars, and tower unlocks. Version 1 and 2 saves migrate to version 3. Generated Web Audio provides quiet distance-based tower tones, missile, leak, win, and loss cues with a mute control. The game includes pause, 2x speed, build-while-paused, additive weapon lighting, responsive controls, retry, and exact 1% loss and 99% win thresholds.
 
 ## Measured CPU simulation check
 
@@ -26,9 +26,9 @@ A separate Chrome 151 check at 1600×913 on ANGLE Metal / Apple M1 Max measured 
 
 Use `Sir, We Have an Orc Problem` as the user's visual and gameplay reference. Show a dense mass of unicorns with fluid-like motion. The player builds towers. Weapon fire must produce visible light effects on the battlefield. The spaced rows in the renderer test are temporary, not the target presentation.
 
-The current implementation follows the fluid approach: 2,304 cells store exact integer population, movement follows the shared flow field, blocked cells stay empty, and a cumulative texture expands cell populations into one million GPU points. Towers, missile blasts, and fortress arrivals modify exact cell counts. The texture-free runtime was measured at 59.6 FPS with one million active points before the runtime reduction. The final packaged release is 9,446 bytes, below the 13,312-byte limit. Individual points are visual identities within a cell rather than persistent CPU entities; gameplay state is exact at cell resolution.
+The current implementation follows the fluid approach: 2,304 cells store exact integer population, movement follows the shared flow field, blocked cells stay empty, and a cumulative texture expands cell populations into one million GPU points. Towers, missile blasts, and fortress arrivals modify exact cell counts. The texture-free runtime was measured at 59.6 FPS with one million active points before the runtime reduction. The final packaged release is 11,370 bytes, below the 13,312-byte limit. Individual points are visual identities within a cell rather than persistent CPU entities; gameplay state is exact at cell resolution.
 
-The inherited build tools report dependency advisories. Review and update the affected tools before deployment; do not expose the old development server to the public network.
+Both production dependency audits report zero vulnerabilities. The development server remains bound to `127.0.0.1`.
 
 The design source is `game-design-doc.md`, version 0.1. All 151 sections were read. Keep that source unchanged. This report records proposed build choices, not changes to the design.
 
@@ -114,15 +114,15 @@ None of these items prevents Prototype Zero. Final values need play tests.
 | Scale | Test 1,000, 5,000, and 10,000 live enemies first. Then test 25,000, 100,000, and 200,000 visible units. None of these counts is a release promise yet. |
 | Performance | Aim for 60 FPS at 1x with 5,000 enemies on a recorded desktop test device. Record browser, GPU, viewport, pixel ratio, frame-time percentiles, and simulation time. Confirm the release target after the first tests. |
 | Prototype Zero | One map, one horde, Star Blaster, and fortress damage. No meta screen. Test an explosion and knockback before the content stage. |
-| First playable version | One map, 8 waves, Star Blaster, Cloud Mortar, Friendship Coil, Basic and Sprinter enemies, Magic Missile and Freeze Rainbow, meta upgrades, save, and retry. This is within design sections 134–135. |
-| Initial unlocks | Start with Star Blaster, Cloud Mortar, and Magic Missile. Unlock Coil and Freeze through progress. This resolves the two-starting-towers rule for the first playable version; the example timeline lists only one tower at time zero. |
+| First playable version | One stage, one aggregate one-million-unicorn crowd, four tower roles, Magic Missile, permanent progression, generated audio, pause, 2x speed, retry, and the 99% objective. |
+| Initial unlocks | Start with Blaster. The Arsenal progression branch unlocks Mortar, Coil, and Prism in that order. |
 | Map and values | Author one fixed map with build pads, open ground, a choke, and a fortress. Costs, ranges, fire rates, health, speeds, wave budgets, and cooldowns still need data tables and tuning. |
 | Armor | Use flat reduction first, as in section 92 and the Crystal enemy role. Section 93 offers a different percentage model. Do not apply both. Revisit before adding Crystal enemies. |
 | Continuous damage | Apply damage per second using elapsed simulation time. Do not apply a minimum of 1 damage on every frame; that would make damage depend on update rate. |
 | Status rules | Strongest slow wins. Define duration refresh, vulnerability cap, freeze/knockback interaction, and damage-over-time rules before adding those effects. |
 | Meta save | Use a versioned localStorage record for currency, unlocks, upgrades, and records. Validate loaded values and handle storage errors. Do not overwrite an unknown newer save. Save rewards once at run end and save each purchase. |
-| Release content | Final sprites, animation frames, audio, music, asset rights, full map layouts, upgrade tree, and boss values remain to be made. No final unicorn asset set was supplied in the design. |
-| Scope | No multiplayer, inventory, crafting, quests, procedural maps, or backend. No 13 KiB limit was requested. |
+| Release content | The compact one-stage scope is delivered. Enemy archetypes, bosses, extra maps, and extra abilities are deliberately excluded. Further work is balance and measured browser performance, not more content systems. |
+| Scope | One stage and one aggregate enemy mass. No enemy archetypes, bosses, extra maps, extra abilities, multiplayer, inventory, crafting, quests, procedural maps, or backend. The self-contained release must remain below 13,312 bytes. |
 
 ## Safe project setup
 
@@ -151,16 +151,16 @@ Complete one row at a time. Split a row into smaller commits if it contains sepa
 | B01 | Done | Create `game/` with the bootstrap procedure above. | Type check; production build; browser shows 2D sprites; no broken core links; reference repos unchanged. |
 | B02 | Done | Remove platform gameplay; add a top-down scene, temporary atlas, pan, zoom, correct depth, and safe instance capacity. | Browser shows overlapping sprites in correct order; test entity removal/reuse and capacity boundary; verify instanced calls and used-range uploads. |
 | B03 | Done | Add fixed-step timing, pause, speed controls, fixed map, and shared flow field. | Small runnable checks for equal-cost routes, blocked and unreachable cells, corner handling, pause, and equivalent 1x/2x simulation time. |
-| B04 | In progress | Add uniform grid, area spawning, crowd forces, and fortress arrivals. | Check local queries against a brute-force reference on a small sample; no non-finite positions; no wall escape; each arrival causes damage once. |
-| B05 | In progress | Add health, Star Blaster, and death removal. Complete Prototype Zero. | Check range, FIRST targeting, damage, target reuse, and single kill rewards; play the one-tower scene. |
-| B06 | In progress | Add a test explosion, knockback, density display, and repeatable crowd stress scenes. | Test 1k/5k/10k; record frame and simulation costs; inspect choke compression and recovery after blast. Stop content work if crowd motion fails. |
-| B07 | In progress | Add wave segments, Stars, valid tower placement, win/loss, and retry. | Check budgets, purchases, forbidden pads, pause-build, last-wave completion, and one run end. Test first threat at 20–40 seconds. |
-| B08 | In progress | Add Sparkles, upgrades, summary, and safe meta saves. | Check reward once, purchase rules, invalid/newer saves, storage failure, reload, and retry. Play three runs and compare progress. |
-| B09 | In progress | Add Cloud Mortar, density targeting, and bounded death effects. | Check radius/falloff and mass-based knockback; record dense-wave costs with effects enabled. |
-| B10 | In progress | Add Friendship Coil, Sprinter, Magic Missile, and Freeze Rainbow. | Check unique chain targets, chain decay, area input, cooldowns, freeze expiry, and UI/map input conflicts. |
-| B11 | Not started | Complete the first playable version with 8 waves, tutorial, and full HUD. | Play win and loss routes; test pan/zoom, pause/2x, upgrade/retry, keyboard controls, and visible labels that do not rely only on color. |
-| B12 | Not started | Add audio, adjust effects, and tune the first playable version. | Threat at 20–40 seconds; large effect by 60 seconds; useful upgrades after loss; repeat performance checks on a recorded device. |
-| B13 | Not started | Add the remaining design content only after crowd and retry tests pass. | Separate tasks for each tower, ability, enemy, map, and upgrade group; regression and performance checks for each. |
+| B04 | Done | Add aggregate grid movement, area spawning, crowd pressure, and fortress arrivals. | Conservation, wall exclusion, broad-front, and arrival checks pass. |
+| B05 | Done | Add health-equivalent population damage, Blaster, and kill removal. | Range, targeting, damage, timing, and exact kill checks pass. |
+| B06 | Done | Add Magic Missile, blast feedback, and crowd recovery. | Million cap, blast effects, stable diffusion, and checkerboard regression pass. |
+| B07 | Done | Add Stars, valid tower placement, win/loss, pause, 2x speed, and retry. | Placement, exact thresholds, pause-build, and browser control checks pass. |
+| B08 | Done | Add Rainbows, six permanent upgrades, summary, and safe versioned saves. | Reward, purchase, migration, validation, tower unlock, and retry checks pass. |
+| B09 | Done | Add Mortar area damage and bounded effects. | Area damage and effect checks pass. |
+| B10 | Done | Add Coil chain damage, Prism line damage, and Magic Missile. | Unique chain, line damage, cooldown, and input checks pass. |
+| B11 | Done | Complete the compact playable version with four tower roles, tutorial, pause, 2x speed, audio controls, and full HUD. | Focused checks and browser tests cover controls, build-while-paused, responsive layout, and visible labels. |
+| B12 | Done | Add generated audio, weapon lighting, distance-based hit pitch, and responsive polish. | Full regression, dependency audits, browser smoke tests, and the 11,370-byte package pass. |
+| B13 | Cancelled | Add enemy archetypes, bosses, extra maps, and extra abilities. | The user replaced this scope with the one-stage 99% objective. |
 
 ### Resume procedure
 

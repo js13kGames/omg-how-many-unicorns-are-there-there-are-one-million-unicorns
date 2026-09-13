@@ -1,4 +1,11 @@
-import {Crowd, CROWD_LIMIT, CROWD_RATE, ESCAPE_LIMIT, KILL_TARGET} from "../src/crowd.js";
+import {
+    Crowd,
+    CROWD_LIMIT,
+    CROWD_RATE,
+    ESCAPE_LIMIT,
+    hit_pitch,
+    KILL_TARGET,
+} from "../src/crowd.js";
 import {MAP_WIDTH} from "../src/navigation.js";
 
 function check(ok: boolean, message: string) {
@@ -30,6 +37,11 @@ check(crowd.Explode(5, 18) > 0 && crowd.Count < beforeBlast, "Missile removes lo
 check(
     crowd.Effects.length === 3 && crowd.Effects.some((effect) => effect.kind === "missile"),
     "Missile emits streak and impact rays",
+);
+check(
+    hit_pitch({fromX: 0, fromY: 0, x: 10, y: 0, life: 1, duration: 1, width: 1, kind: "laser"}) >
+        hit_pitch({fromX: 0, fromY: 0, x: 1, y: 0, life: 1, duration: 1, width: 1, kind: "laser"}),
+    "Far tower hits have a higher pitch",
 );
 const diffusion = new Crowd();
 const center = 18 * MAP_WIDTH + 20;
