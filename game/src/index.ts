@@ -1,4 +1,4 @@
-import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET} from "./crowd.js";
+import {Crowd, CROWD_LIMIT, ESCAPE_LIMIT, KILL_TARGET, TOWER_COSTS, TOWER_NAMES} from "./crowd.js";
 import {blocked, MAP_HEIGHT, MAP_WIDTH} from "./navigation.js";
 import {
     missile_cooldown,
@@ -60,6 +60,7 @@ try {
 } catch {}
 let stars = 360;
 let speed = 1;
+let towerKind = 0;
 let building = false;
 let rewarded = false;
 let missile = 0;
@@ -73,6 +74,7 @@ let oy = 0;
 let hover = [-1, -1];
 const start = document.querySelector<HTMLButtonElement>("#start")!;
 const build = document.querySelector<HTMLButtonElement>("#build")!;
+const towerSelect = document.querySelector<HTMLSelectElement>("#tower")!;
 const speedButton = document.querySelector<HTMLButtonElement>("#speed")!;
 const result = document.querySelector<HTMLElement>("#result")!;
 const intro = document.querySelector<HTMLElement>("#intro")!;
@@ -130,7 +132,8 @@ fx.onpointermove = (event) => (hover = point(event));
 fx.onpointerdown = (event) => {
     const [x, y] = point(event);
     if (building) {
-        if (stars >= 60 && crowd.Build(x, y)) stars -= 60;
+        const cost = TOWER_COSTS[towerKind];
+        if (stars >= cost && crowd.Build(x, y, towerKind)) stars -= cost;
     } else if (!crowd.Result && missile <= 0 && crowd.Explode(x + 0.5, y + 0.5)) {
         missile = missileDelay;
         blast = [x + 0.5, y + 0.5, 1];
@@ -143,6 +146,10 @@ start.onclick = () => {
 build.onclick = () => {
     building = !building;
     build.ariaPressed = String(building);
+};
+towerSelect.onchange = () => {
+    towerKind = towerSelect.selectedIndex;
+    build.textContent = `BUILD ${TOWER_NAMES[towerKind]} · ${TOWER_COSTS[towerKind]}`;
 };
 speedButton.onclick = () => {
     speed = speed === 1 ? 2 : 1;
@@ -222,16 +229,41 @@ function overlay() {
         front.beginPath();
         front.arc(x, y, scale * 0.43, 0, Math.PI * 2);
         front.fill();
-        front.strokeStyle = "#8ff5ff";
+        front.strokeStyle = ["#8ff5ff", "#ff9d52", "#fff47a", "#d898ff"][tower.kind];
         front.lineWidth = Math.max(2, scale * 0.12);
         front.stroke();
         front.fillStyle = "#dffcff";
-        front.fillRect(x - scale * 0.1, y - scale * 0.42, scale * 0.2, scale * 0.45);
+        if (tower.kind === 1) {
+            front.beginPath();
+            front.arc(x, y, scale * 0.23, Math.PI, 0);
+            front.stroke();
+        } else if (tower.kind === 2) {
+            front.beginPath();
+            front.moveTo(x - scale * 0.18, y + scale * 0.25);
+            front.lineTo(x, y - scale * 0.35);
+            front.lineTo(x + scale * 0.18, y + scale * 0.25);
+            front.stroke();
+        } else if (tower.kind === 3) {
+            front.beginPath();
+            front.moveTo(x, y - scale * 0.38);
+            front.lineTo(x + scale * 0.24, y + scale * 0.28);
+            front.lineTo(x - scale * 0.24, y + scale * 0.28);
+            front.closePath();
+            front.stroke();
+        } else front.fillRect(x - scale * 0.1, y - scale * 0.42, scale * 0.2, scale * 0.45);
     }
     front.lineCap = "round";
     for (const effect of crowd.Effects) {
         front.strokeStyle =
-            effect.kind === "laser" ? "#74f6ff" : effect.kind === "missile" ? "#ff781c" : "#fff47a";
+            effect.kind === "laser"
+                ? "#74f6ff"
+                : effect.kind === "missile"
+                  ? "#ff781c"
+                  : effect.kind === "coil"
+                    ? "#fff47a"
+                    : effect.kind === "prism"
+                      ? "#d898ff"
+                      : "#ff9d52";
         front.lineWidth = Math.max(2, effect.width * scale);
         front.beginPath();
         front.moveTo(ox + effect.fromX * scale, oy + effect.fromY * scale);
@@ -256,7 +288,7 @@ function hud() {
     document.querySelector<HTMLElement>("#kf")!.style.width =
         `${(crowd.Kills / KILL_TARGET) * 100}%`;
     start.disabled = crowd.Running || !!crowd.Result;
-    build.disabled = (!!crowd.Result || stars < 60) && !building;
+    build.disabled = (!!crowd.Result || stars < TOWER_COSTS[towerKind]) && !building;
     build.ariaPressed = String(building);
     speedButton.ariaPressed = String(speed === 2);
 }

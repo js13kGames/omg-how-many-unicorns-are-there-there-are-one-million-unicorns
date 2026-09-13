@@ -7,10 +7,14 @@ export const CROWD_RATE = 50_000;
 export const CROWD_CELLS = MAP_WIDTH * MAP_HEIGHT;
 const FLOW_STEP = 1 / 20;
 
+export const TOWER_NAMES = ["BLASTER", "MORTAR", "COIL", "PRISM"];
+export const TOWER_COSTS = [60, 100, 80, 140];
+
 export interface CrowdTower {
     x: number;
     y: number;
     clock: number;
+    kind: number;
 }
 
 export interface CrowdEffect {
@@ -21,7 +25,7 @@ export interface CrowdEffect {
     life: number;
     duration: number;
     width: number;
-    kind: "laser" | "missile" | "blast";
+    kind: "laser" | "missile" | "blast" | "coil" | "prism";
 }
 
 export class Crowd {
@@ -65,10 +69,13 @@ export class Crowd {
         this.Dirty = true;
     }
 
-    Build(x: number, y: number) {
+    Build(x: number, y: number, kind = 0) {
         if (
             !Number.isInteger(x) ||
             !Number.isInteger(y) ||
+            !Number.isInteger(kind) ||
+            kind < 0 ||
+            kind >= TOWER_NAMES.length ||
             x < 0 ||
             x >= 56 ||
             y < 0 ||
@@ -77,7 +84,7 @@ export class Crowd {
             this.Towers.some((tower) => Math.floor(tower.x) === x && Math.floor(tower.y) === y)
         )
             return false;
-        this.Towers.push({x: x + 0.5, y: y + 0.5, clock: 0});
+        this.Towers.push({x: x + 0.5, y: y + 0.5, clock: 0, kind});
         return true;
     }
 
@@ -192,26 +199,85 @@ export class Crowd {
             tower.clock -= delta;
             if (tower.clock > 0) continue;
             let target = -1,
-                best = Infinity;
+                best = tower.kind === 1 ? 0 : Infinity;
             for (let cell = 0; cell < CROWD_CELLS; cell++) {
-                if (!this.Population[cell]) continue;
+                const count = this.Population[cell];
+                if (!count) continue;
                 const x = (cell % MAP_WIDTH) + 0.5,
                     y = Math.floor(cell / MAP_WIDTH) + 0.5,
                     distance = (x - tower.x) ** 2 + (y - tower.y) ** 2;
-                if (distance <= this.TowerRange ** 2 && distance < best) {
+                if (
+                    distance <= (this.TowerRange + tower.kind * 2) ** 2 &&
+                    (tower.kind === 1 ? count > best : distance < best)
+                ) {
                     target = cell;
-                    best = distance;
+                    best = tower.kind === 1 ? count : distance;
                 }
             }
-            if (target >= 0) {
-                const removed = this.Remove(target, this.TowerDamage);
-                if (removed) {
-                    const x = (target % MAP_WIDTH) + 0.5,
-                        y = Math.floor(target / MAP_WIDTH) + 0.5;
-                    this.Effect(tower.x, tower.y, x, y, 0.18, 0.14, "laser");
+            if (target < 0) continue;
+            const tx = (target % MAP_WIDTH) + 0.5,
+                ty = Math.floor(target / MAP_WIDTH) + 0.5;
+            if (tower.kind === 1) {
+                for (let y = -2; y <= 2; y++)
+                    for (let x = -2; x <= 2; x++) {
+                        const cell = target + y * MAP_WIDTH + x;
+                        if (cell >= 0 && cell < CROWD_CELLS && x * x + y * y <= 4)
+                            this.Remove(cell, this.TowerDamage * 0.55);
+                    }
+                this.Effect(tower.x, tower.y, tx, ty, 0.35, 0.5, "blast");
+            } else if (tower.kind === 2) {
+                let from = target;
+                const hit: number[] = [];
+                for (let jump = 0; jump < 5; jump++) {
+                    let next = -1,
+                        distance = Infinity;
+                    for (let cell = 0; cell < CROWD_CELLS; cell++)
+                        if (this.Population[cell] && !hit.includes(cell)) {
+                            const d =
+                                ((cell % MAP_WIDTH) - (from % MAP_WIDTH)) ** 2 +
+                                (Math.floor(cell / MAP_WIDTH) - Math.floor(from / MAP_WIDTH)) ** 2;
+                            if (d < distance) {
+                                next = cell;
+                                distance = d;
+                            }
+                        }
+                    if (next < 0 || distance > 20) break;
+                    const x = (next % MAP_WIDTH) + 0.5,
+                        y = Math.floor(next / MAP_WIDTH) + 0.5;
+                    this.Remove(next, this.TowerDamage * 0.7);
+                    this.Effect(
+                        jump ? (from % MAP_WIDTH) + 0.5 : tower.x,
+                        jump ? Math.floor(from / MAP_WIDTH) + 0.5 : tower.y,
+                        x,
+                        y,
+                        0.16,
+                        0.12,
+                        "coil",
+                    );
+                    hit.push(next);
+                    from = next;
                 }
-                tower.clock = this.TowerInterval;
+            } else if (tower.kind === 3) {
+                const distance = Math.hypot(tx - tower.x, ty - tower.y),
+                    length = this.TowerRange + 6,
+                    dx = ((tx - tower.x) / distance) * length,
+                    dy = ((ty - tower.y) / distance) * length;
+                for (let cell = 0; cell < CROWD_CELLS; cell++) {
+                    const x = (cell % MAP_WIDTH) + 0.5 - tower.x,
+                        y = Math.floor(cell / MAP_WIDTH) + 0.5 - tower.y;
+                    if (
+                        x * dx + y * dy >= 0 &&
+                        x * dx + y * dy <= length * length &&
+                        Math.abs(x * dy - y * dx) / length < 0.7
+                    )
+                        this.Remove(cell, this.TowerDamage * 0.8);
+                }
+                this.Effect(tower.x, tower.y, tower.x + dx, tower.y + dy, 0.28, 0.35, "prism");
+            } else {
+                this.Remove(target, this.TowerDamage);
+                this.Effect(tower.x, tower.y, tx, ty, 0.18, 0.14, "laser");
             }
+            tower.clock = this.TowerInterval * [1, 2, 1.2, 1.6][tower.kind];
         }
     }
 
